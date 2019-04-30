@@ -1,0 +1,75 @@
+﻿<Window x:Class="p528_gui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        xmlns:local="clr-namespace:p528_gui"
+        mc:Ignorable="d"
+        Title="ITS Rec P.528-4 Curve Visualizer" Height="600" Width="800"
+        Icon="img\favicon.ico">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Menu Grid.Row="0">
+            <MenuItem Header="File">
+                <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
+        </Menu>
+
+        <lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True">
+            <lvc:CartesianChart.AxisX>
+                <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator Step="200"/>
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
+            </lvc:CartesianChart.AxisX>
+            <lvc:CartesianChart.AxisY>
+                <lvc:Axis Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300"/>
+            </lvc:CartesianChart.AxisY>
+            <lvc:CartesianChart.DataTooltip>
+                <local:CustomToolTip/>
+            </lvc:CartesianChart.DataTooltip>
+        </lvc:CartesianChart>
+
+        <Grid Grid.Row="2" Margin="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Name="tb_Warning" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+
+            <TextBlock Name="tb_t1" Grid.Row="1" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1"/>
+            <Image Name="img_t1" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="img\Warning.png" Visibility="Collapsed"/>
+            <TextBlock Name="tb_t2" Grid.Row="2" Grid.Column="0" Text="Terminal 2 Height (m):" Margin="3" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h2"/>
+            <Image Name="img_t2" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="img\Warning.png" Visibility="Collapsed"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="3" Text="Frequency (MHz):" Margin="3" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="1" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq"/>
+            <TextBlock Grid.Row="2" Grid.Column="3" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="2" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_time"/>
+
+            <Button Grid.Row="2" Grid.Column="5" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click"/>
+        </Grid>
+    </Grid>
+</Window>
