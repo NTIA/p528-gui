@@ -1,31 +1,40 @@
-# NOTICE!
-**Please note that this software is based on a proposed update to Rec P.528 which will be considered during the May 2019 Study Group 3 meetings.  The current in-force Recommendation is P.525-3 (not P.528-4).  This code could undergo changes, including but not limited to breaking and functional changes, up until the conclusion of the Study Group 3 meetings, based on the outcomes of the meetings.**
+# NOTICE! #
+**This software is depends upon a proposed update to ITU-R Recommendation P.528 which will be considered during the May 2019 ITU-R Study Group 3 meetings.  This revision to P.528 is not yet the in-force Recommendation.  The results generated should be considered preliminary until this notice in the repository readme is removed.**
 
 ---
 
-# Rec P.528-4 Curve Visualizer Tool
+# ITU-R Rec P.528 GUI #
 
-This repo contains a Graphical User Interface (GUI) frontend to [Recommendation ITU-R P.528-4](https://www.itu.int/rec/R-REC-P.528/en).  It uses the [US Reference Implementation](https://github.com/NTIA/p528) of the model to render curves relating distance to propagation loss.
+This code repository contains a Graphical User Interface (GUI) frontend to the [U.S. Reference Implementation](https://github.com/NTIA/p528) of ITU-R Rec P.528.  It allows a user to set input parameters and generate a loss-versus-distance curve with modes of propagation (Line-of-Sight, Diffraction, and Troposcatter) identified.
 
-# Inputs #
+## Inputs ##
 
- * Height of the low terminal, in meters. Must be greater than or equal to 1.5 meters.
- * Height of the high terminal, in meters.  Must be greater than or equal to 1.5 meters.
- * Frequency, in MHz.  The lowest frequency is 125 MHz and the heightest frequency is 15 500 MHz.
- * Time percentage, which must be from 1 to 99.
+ * Height of the low terminal
+ * Height of the high terminal
+ * Frequency
+ * Time percentage
  
- The below image shows the tool rendering a curve with a low terminal height of 1.5 meters and a high terminal height of 1000 meters, for signal at 125 MHz at a 50% time percentage.  This corresponds to one of the curves shown in Figure 1-4a in the P.528 Recommendaation.
+ See [p528](https://github.com/NTIA/p528/blob/master/README.md#inputs) for additional details on these input parameters.
+
+## Outputs ##
+
+The image below illustrates p528-gui for input parameters corresponding to Figure 1-4a in ITU-R Rec P.528.  The data representing this figure can be exported to a CSV data file.
  
 ![Screenshot of P.528 GUI Tool](P528-Fig1-4a.png "Screenshot of P.528 GUI Tool")
 
-# Distribution #
+## Configure and Build ##
 
-To aquire a pre-built executable of this tool, navigate to the [Releases](https://github.com/NTIA/p528-gui/releases) page and download the most recent release.  Once downloaded, unzip the `.zip` file and place all files in the same folder.  Double-click on the `.exe` file to launch the application.
+The tool is built on the .NET Framework and Windows Presentation Foundation, and is thus limited to execution on Microsoft Windows.  It uses the [Live Charts](https://github.com/Live-Charts/Live-Charts) package for the rendering of the plot.
 
-# Software Dependencies #
+## Install ##
 
-The tool is built on the .NET Framework and Windows Presentation Foundation.  It uses the [Live Charts](https://github.com/Live-Charts/Live-Charts) package for the rendering of the plot.  As previously stated, this tool uses the [US Reference Implementation](https://github.com/NTIA/p528) of the P.528 model to generate the loss values.
+To aquire a pre-built executable of this tool, navigate to the [Releases](https://github.com/NTIA/p528-gui/releases) page and download the most recent release.  Once downloaded, unzip the `.zip` file such that all the files are in the same folder.  Double-click on the `.exe` file to launch the application.  Rec P.528 comes bundled with the executable.
 
+## References ##
+
+ * [ITU-R Recommendation P.528](https://www.itu.int/rec/R-REC-P.528/en)
+ * [U.S. Reference Implementation of Recommendation P.528](https://github.com/NTIA/p528)
+ 
 # Contact #
 
 For questions, contact Billy Kozma, (303) 497-6082, wkozma@ntia.gov
