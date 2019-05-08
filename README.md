@@ -5,7 +5,7 @@
 
 # ITU-R Rec P.528 GUI #
 
-This repo contains a Graphical User Interface (GUI) frontend to [ITU-R Recommendation P.528](https://www.itu.int/rec/R-REC-P.528/en).  It uses the [U.S. Reference Implementation](https://github.com/NTIA/p528) of the model to render curves relating distance to propagation loss.  It allows a user to set the model input parameters and generate a curve relating distance with loss.  In addition, this program allows the user to identify the three modes of propagation (Line-of-Sight, Diffraction, and Troposcatter).
+This code repository contains a Graphical User Interface (GUI) frontend to the [U.S. Reference Implementation](https://github.com/NTIA/p528) of ITU-R Rec P.528.  It allows a user to set input parameters and generate a loss-versus-distance curve with modes of propagation (Line-of-Sight, Diffraction, and Troposcatter) identified.
 
 ## Inputs ##
 
