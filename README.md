@@ -35,6 +35,6 @@ To aquire a pre-built executable of this tool, navigate to the [Releases](https:
  * [ITU-R Recommendation P.528](https://www.itu.int/rec/R-REC-P.528/en)
  * [U.S. Reference Implementation of Recommendation P.528](https://github.com/NTIA/p528)
  
-# Contact #
+## Contact ##
 
 For questions, contact Billy Kozma, (303) 497-6082, wkozma@ntia.gov
