@@ -26,9 +26,9 @@ The below image shows the tool rendering a curve with a low terminal height of 1
 
 To aquire a pre-built executable of this tool, navigate to the [Releases](https://github.com/NTIA/p528-gui/releases) page and download the most recent release.  Once downloaded, unzip the `.zip` file and place all files in the same folder.  Double-click on the `.exe` file to launch the application.
 
-## Dependencies ##
+## Configure and Build ##
 
-The tool is built on the .NET Framework and Windows Presentation Foundation, and is thus limited to execution on Microsoft Windows.  It uses the [Live Charts](https://github.com/Live-Charts/Live-Charts) package for the rendering of the plot.  As previously stated, this tool uses the [U.S. Reference Implementation](https://github.com/NTIA/p528) of the P.528 model to generate the loss values.
+The tool is built on the .NET Framework and Windows Presentation Foundation, and is thus limited to execution on Microsoft Windows.  It uses the [Live Charts](https://github.com/Live-Charts/Live-Charts) package for the rendering of the plot. The [U.S. Reference Implementation](https://github.com/NTIA/p528) of the P.528 model is used to generate propagation loss relative to distance.
 
 ## References ##
 
