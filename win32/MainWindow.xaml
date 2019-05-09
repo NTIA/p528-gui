@@ -6,7 +6,7 @@
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:local="clr-namespace:p528_gui"
         mc:Ignorable="d"
-        Title="ITS Rec P.528-4 Curve Visualizer" Height="600" Width="800"
+        Title="ITS ITU-R Rec P.528 GUI" Height="600" Width="800"
         Icon="img\favicon.ico">
     <Grid>
         <Grid.RowDefinitions>

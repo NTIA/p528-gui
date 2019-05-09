@@ -7,7 +7,7 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ITS Rec P.528-4 Curve Visualizer")]
+[assembly: AssemblyTitle("ITS ITU-R Rec P.528 GUI")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("The Institute for Telecommunication Sciences")]
