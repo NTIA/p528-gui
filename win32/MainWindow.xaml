@@ -55,7 +55,10 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
 
-            <TextBlock Name="tb_Warning" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" >
+                <TextBlock Name="tb_ConsistencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+                <TextBlock Name="tb_FrequencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+            </StackPanel>
 
             <TextBlock Name="tb_t1" Grid.Row="1" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
             <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1"/>
