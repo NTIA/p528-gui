@@ -96,19 +96,6 @@ namespace p528_gui
                 Values = new ChartValues<ObservablePoint>(),
                 Fill = new SolidColorBrush() { Opacity = 0 }
             });
-
-            var result = MessageBox.Show("" +
-                "This tool uses a pre-approved version of Rec. P.528.  " +
-                "All results shown are currently preliminary.  " +
-                "A new version of this tool will be released following the results of the May 2019 Study Group 3 meetings.  " +
-                "Click 'Yes' to confirm you understand the current state of this software.",
-                "NOTICE!",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Exclamation,
-                MessageBoxResult.No);
-
-            if (result != MessageBoxResult.Yes)
-                this.Close();
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
