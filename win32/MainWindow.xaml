@@ -21,6 +21,9 @@
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="Options">
+                <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
+            </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
 
@@ -36,7 +39,7 @@
                 <lvc:Axis Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300"/>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.DataTooltip>
-                <local:CustomToolTip/>
+                <local:CustomToolTip SelectionMode="OnlySender"/>
             </lvc:CartesianChart.DataTooltip>
         </lvc:CartesianChart>
 

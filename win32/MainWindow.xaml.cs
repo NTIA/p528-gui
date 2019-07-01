@@ -56,11 +56,14 @@ namespace p528_gui
         private const int LOS_SERIES = 0;
         private const int DFRAC_SERIES = 1;
         private const int SCAT_SERIES = 2;
+        private const int FS_SERIES = 3;
 
         private const int TOP_OF_ATMOSPHERE__KM = 475;
         private readonly string TerminalHeightWarning = "Note: Although valid, the entered value is above the reference atmosphere which stops at 475 km above sea level";
         private readonly string ModelConsistencyWarning = "Caution: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Take caution when using these results.";
         private readonly string LowFrequencyWarning = "Warning: The entered frequency is less than the lower limit specified in P.528.  However, the presented results do not violate the underlying theory in the model.";
+
+        private IEnumerable<ObservablePoint> _pts_FS;
 
         public MainWindow()
         {
@@ -102,6 +105,17 @@ namespace p528_gui
                 Values = new ChartValues<ObservablePoint>(),
                 Fill = new SolidColorBrush() { Opacity = 0 }
             });
+
+            PlotData.Add(new LineSeries
+            {
+                Title = "Free Space",
+                PointGeometry = null,
+                StrokeDashArray = new DoubleCollection(new double[] { 4 }),
+                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
+                StrokeThickness = 1,
+                Values = new ChartValues<ObservablePoint>(),
+                Fill = new SolidColorBrush() { Opacity = 0 }
+            });
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
@@ -111,7 +125,7 @@ namespace p528_gui
 
             mi_Export.IsEnabled = true;
 
-            var rtn = GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints);
+            var rtn = GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints);
 
             tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
             tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
@@ -120,6 +134,7 @@ namespace p528_gui
             var pts_LOS = losPoints.Select(x => new ObservablePoint(x.X, x.Y));
             var pts_DFRAC = dfracPoints.Select(x => new ObservablePoint(x.X, x.Y));
             var pts_SCAT = scatPoints.Select(x => new ObservablePoint(x.X, x.Y));
+            _pts_FS = fsPoints.Select(x => new ObservablePoint(x.X, x.Y));
 
             // Plot the data
             PlotData[LOS_SERIES].Values.Clear();
@@ -128,6 +143,11 @@ namespace p528_gui
             PlotData[DFRAC_SERIES].Values.AddRange(pts_DFRAC);
             PlotData[SCAT_SERIES].Values.Clear();
             PlotData[SCAT_SERIES].Values.AddRange(pts_SCAT);
+            if (mi_FreeSpace.IsChecked)
+            {
+                PlotData[FS_SERIES].Values.Clear();
+                PlotData[FS_SERIES].Values.AddRange(_pts_FS);
+            }
         }
 
         /// <summary>
@@ -213,11 +233,12 @@ namespace p528_gui
             return true;
         }
 
-        private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints)
+        private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints)
         {
             losPoints = new List<Point>();
             dfracPoints = new List<Point>();
             scatPoints = new List<Point>();
+            fsPoints = new List<Point>();
 
             var result = new CResult();
             bool dfracSwitch = false;
@@ -253,6 +274,8 @@ namespace p528_gui
                         scatPoints.Add(new Point(result.d__km, result.A__db));
                         break;
                 }
+
+                fsPoints.Add(new Point(result.d__km, result.A_fs__db));
             }
 
             return rtn;
@@ -320,6 +343,31 @@ namespace p528_gui
         {
             var aboutWindow = new AboutWindow();
             aboutWindow.ShowDialog();
+        }
+
+        private void Mi_FreeSpace_Click(object sender, RoutedEventArgs e)
+        {
+            if (!mi_FreeSpace.IsChecked)
+                PlotData.RemoveAt(FS_SERIES);
+            else
+                AddFreeSpaceLineToPlot();
+        }
+
+        private void AddFreeSpaceLineToPlot()
+        {
+            PlotData.Add(new LineSeries
+            {
+                Title = "Free Space",
+                PointGeometry = null,
+                StrokeDashArray = new DoubleCollection(new double[] { 4 }),
+                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
+                StrokeThickness = 1,
+                Values = new ChartValues<ObservablePoint>(),
+                Fill = new SolidColorBrush() { Opacity = 0 }
+            });
+
+            if (_pts_FS != null)
+                PlotData[FS_SERIES].Values.AddRange(_pts_FS);
         }
     }
 }
