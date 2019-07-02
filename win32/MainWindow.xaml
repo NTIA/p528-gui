@@ -23,6 +23,10 @@
             </MenuItem>
             <MenuItem Header="Options">
                 <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
+                <MenuItem Header="Units...">
+                    <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
+                    <MenuItem Header="Feet/Nautical Miles" Name="mi_Units_Feet" IsChecked="False" Click="Mi_Units_Feet_Click"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
@@ -31,7 +35,7 @@
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
                     <lvc:Axis.Separator>
-                        <lvc:Separator Step="200"/>
+                        <lvc:Separator x:Name="xSeparator" Step="200"/>
                     </lvc:Axis.Separator>
                 </lvc:Axis>
             </lvc:CartesianChart.AxisX>
@@ -39,7 +43,7 @@
                 <lvc:Axis Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300"/>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.DataTooltip>
-                <local:CustomToolTip SelectionMode="OnlySender"/>
+                <local:CustomToolTip x:Name="customToolTip" SelectionMode="OnlySender"/>
             </lvc:CartesianChart.DataTooltip>
         </lvc:CartesianChart>
 

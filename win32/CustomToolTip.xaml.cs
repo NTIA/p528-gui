@@ -24,6 +24,8 @@ namespace p528_gui
 
         public PointViewModel PointVM { get; set; }
 
+        public Units Units { get; set; } = Units.Meters;
+
         public CustomToolTip()
         {
             InitializeComponent();
@@ -44,7 +46,8 @@ namespace p528_gui
                     _data.Points[0].Series.Title,
                     _data.Points[0].ChartPoint.X,
                     _data.Points[0].ChartPoint.Y,
-                    _data.Points[0].Series.Stroke);
+                    _data.Points[0].Series.Stroke,
+                    Units);
 
                 OnPropertyChanged("PointVM");
             }

@@ -34,6 +34,12 @@ namespace p528_gui
         public double A_fs__db;
     }
 
+    public enum Units
+    {
+        Meters,
+        Feet
+    }
+
     public partial class MainWindow : Window
     {
         [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "Main")]
@@ -45,25 +51,32 @@ namespace p528_gui
 
         public SeriesCollection PlotData { get; set; } = new SeriesCollection();
 
-        private double _h1__meter;
-        private double _h2__meter;
-        private double _f__mhz;
-        private double _time;
+        private double _h1;         // meters or feet
+        private double _h2;         // meters or feet
+        private double _f__mhz;     // MHz
+        private double _time;       // %
 
-        private const double MAX_DISTANCE = 1800;   // km
-        private const int PLOT_STEP_KM = 1;
+        private const double MAX_DISTANCE = 1800;   // km or n miles
+        private const int PLOT_STEP = 1;            // km or n miles
 
         private const int LOS_SERIES = 0;
         private const int DFRAC_SERIES = 1;
         private const int SCAT_SERIES = 2;
         private const int FS_SERIES = 3;
 
+        // unit conversion factors
+        private const double METER_PER_FOOT = 0.3048;
+        private const double KM_PER_NAUTICAL_MILE = 1.852;
+
         private const int TOP_OF_ATMOSPHERE__KM = 475;
+
+        // warning text
         private readonly string TerminalHeightWarning = "Note: Although valid, the entered value is above the reference atmosphere which stops at 475 km above sea level";
         private readonly string ModelConsistencyWarning = "Caution: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Take caution when using these results.";
         private readonly string LowFrequencyWarning = "Caution: The entered frequency is less than the lower limit specified in P.528.  Take caution when using these results.";
 
         private IEnumerable<ObservablePoint> _pts_FS;
+        private Units _units = Units.Meters;
 
         public MainWindow()
         {
@@ -116,6 +129,8 @@ namespace p528_gui
                 Values = new ChartValues<ObservablePoint>(),
                 Fill = new SolidColorBrush() { Opacity = 0 }
             });
+
+            SetUnits();
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
@@ -125,8 +140,9 @@ namespace p528_gui
 
             mi_Export.IsEnabled = true;
 
-            var rtn = GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints);
+            var rtn = GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
+            // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
             tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -150,6 +166,18 @@ namespace p528_gui
             }
         }
 
+        private double ConvertMetersToSpecifiedUnits(double meters)
+        {
+            return (_units == Units.Meters) ? meters : (meters / METER_PER_FOOT);
+        }
+
+        private double ConvertSpecifiedUnitsToKm(double value)
+        {
+            var value__meters = (_units == Units.Meters) ? value : (value * METER_PER_FOOT);
+
+            return value__meters / 1000.0;
+        }
+
         /// <summary>
         /// Validate user specified inputs
         /// </summary>
@@ -157,38 +185,38 @@ namespace p528_gui
         private bool AreInputsValid()
         {
             if (String.IsNullOrEmpty(tb_h1.Text) ||
-                !Double.TryParse(tb_h1.Text, out double h1__meter) ||
-                h1__meter < 1.5)
+                !Double.TryParse(tb_h1.Text, out double h1) ||
+                h1 < ConvertMetersToSpecifiedUnits(1.5))
             {
                 ValidationError(tb_h1);
-                MessageBox.Show("Terminal 1 must be at least 1.5 meters");
+                MessageBox.Show("Terminal 1 must be at least " + ((_units == Units.Meters) ? "1.5 meters" : "5 feet"));
                 return false;
             }
             else
             {
                 ValidationSuccess(tb_h1);
-                _h1__meter = h1__meter;
+                _h1 = h1;
 
-                img_t1.Visibility = (_h1__meter / 1000.0 <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
+                img_t1.Visibility = (ConvertSpecifiedUnitsToKm(_h1) <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
             }
 
             if (String.IsNullOrEmpty(tb_h2.Text) ||
-                !Double.TryParse(tb_h2.Text, out double h2__meter) ||
-                h2__meter < 1.5)
+                !Double.TryParse(tb_h2.Text, out double h2) ||
+                h2 < ConvertMetersToSpecifiedUnits(1.5))
             {
                 ValidationError(tb_h2);
-                MessageBox.Show("Terminal 2 must be at least 1.5 meters");
+                MessageBox.Show("Terminal 2 must be at least " + ((_units == Units.Meters) ? "1.5 meters" : "5 feet"));
                 return false;
             }
             else
             {
                 ValidationSuccess(tb_h2);
-                _h2__meter = h2__meter;
+                _h2 = h2;
 
-                img_t2.Visibility = (_h2__meter / 1000.0 <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
+                img_t2.Visibility = (ConvertSpecifiedUnitsToKm(_h2) <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
             }
 
-            if (h1__meter > h2__meter)
+            if (h1 > h2)
             {
                 ValidationError(tb_h1);
                 ValidationError(tb_h2);
@@ -233,20 +261,34 @@ namespace p528_gui
             return true;
         }
 
-        private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints)
+        private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
         {
             losPoints = new List<Point>();
             dfracPoints = new List<Point>();
             scatPoints = new List<Point>();
             fsPoints = new List<Point>();
 
-            var result = new CResult();
             bool dfracSwitch = false;
             bool scatSwitch = false;
+
+            var result = new CResult();
             int rtn = 0;
-            for (int d__km = 0; d__km <= MAX_DISTANCE; d__km += PLOT_STEP_KM)
+            double d__km, d_out;
+
+            // convert inputs into metric units
+            var h1__meter = (_units == Units.Meters) ? _h1 : (_h1 * METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
+
+            // iterate on user-specified units (km or n miles)
+            for (int d = 0; d <= MAX_DISTANCE; d += PLOT_STEP)
             {
-                var r = P528(d__km, _h1__meter, _h2__meter, _f__mhz, _time, ref result);
+                // convert distance to specified units for input to P.528
+                d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
+
+                var r = P528(d__km, h1__meter, h2__meter, _f__mhz, _time, ref result);
+
+                // convert output distance from P.528 back into user-specified units
+                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / KM_PER_NAUTICAL_MILE);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -255,27 +297,27 @@ namespace p528_gui
                 switch (result.propagation_mode)
                 {
                     case 1: // Line-of-Sight
-                        losPoints.Add(new Point(result.d__km, result.A__db));
+                        losPoints.Add(new Point(d_out, result.A__db));
                         break;
                     case 2: // Diffraction
-                        if (!dfracSwitch)
+                        if (blendLines && !dfracSwitch)
                         {
-                            losPoints.Add(new Point(result.d__km, result.A__db));   // Adding to ensure there is no gap in the curve
+                            losPoints.Add(new Point(d_out, result.A__db));   // Adding to ensure there is no gap in the curve
                             dfracSwitch = true;
                         }
-                        dfracPoints.Add(new Point(result.d__km, result.A__db));
+                        dfracPoints.Add(new Point(d_out, result.A__db));
                         break;
                     case 3: // Troposcatter
-                        if (!scatSwitch)
+                        if (blendLines && !scatSwitch)
                         {
-                            dfracPoints.Add(new Point(result.d__km, result.A__db)); // Adding to ensure there is no gap in the curve
+                            dfracPoints.Add(new Point(d_out, result.A__db)); // Adding to ensure there is no gap in the curve
                             scatSwitch = true;
                         }
-                        scatPoints.Add(new Point(result.d__km, result.A__db));
+                        scatPoints.Add(new Point(d_out, result.A__db));
                         break;
                 }
 
-                fsPoints.Add(new Point(result.d__km, result.A_fs__db));
+                fsPoints.Add(new Point(d_out, result.A_fs__db));
             }
 
             return rtn;
@@ -313,10 +355,13 @@ namespace p528_gui
             var d__km = new List<double>();
             int warnings = 0;
 
+            var h1__meter = (_units == Units.Meters) ? _h1 : (_h1 * METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
+
             var result = new CResult();
             for (int i = 0; i <= MAX_DISTANCE; i++)
             {
-                var r = P528(i, _h1__meter, _h2__meter, _f__mhz, _time, ref result);
+                var r = P528(i, h1__meter, h2__meter, _f__mhz, _time, ref result);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -346,8 +391,8 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1__meter,{_h1__meter}");
-                fs.WriteLine($"h_2__meter,{_h2__meter}");
+                fs.WriteLine($"h_1__meter,{_h1}");
+                fs.WriteLine($"h_2__meter,{_h2}");
                 fs.WriteLine($"f__mhz,{_f__mhz}");
                 fs.WriteLine($"time%,{_time * 100}");
                 fs.WriteLine();
@@ -389,6 +434,41 @@ namespace p528_gui
 
             if (_pts_FS != null)
                 PlotData[FS_SERIES].Values.AddRange(_pts_FS);
+        }
+
+        private void Mi_Units_Meters_Click(object sender, RoutedEventArgs e)
+        {
+            mi_Units_Meters.IsChecked = true;
+            mi_Units_Feet.IsChecked = false;
+            _units = Units.Meters;
+
+            SetUnits();
+        }
+
+        private void Mi_Units_Feet_Click(object sender, RoutedEventArgs e)
+        {
+            mi_Units_Feet.IsChecked = true;
+            mi_Units_Meters.IsChecked = false;
+            _units = Units.Feet;
+
+            SetUnits();
+        }
+
+        private void SetUnits()
+        {
+            // Update text
+            tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+            tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+            xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
+            xAxis.MaxValue = (_units == Units.Meters) ? 1800 : 970;
+            xSeparator.Step = (_units == Units.Meters) ? 200 : 100;
+            customToolTip.Units = _units;
+
+            // Clear plot data
+            PlotData[LOS_SERIES].Values.Clear();
+            PlotData[DFRAC_SERIES].Values.Clear();
+            PlotData[SCAT_SERIES].Values.Clear();
+            PlotData[FS_SERIES].Values.Clear();
         }
     }
 }
