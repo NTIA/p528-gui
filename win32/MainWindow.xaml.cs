@@ -352,22 +352,29 @@ namespace p528_gui
             // Regenerate data at 1 km steps for export
             var A__db = new List<double>();
             var A_fs__db = new List<double>();
-            var d__km = new List<double>();
+            var dists = new List<double>();
             int warnings = 0;
+            double d__km, d_out;
 
             var h1__meter = (_units == Units.Meters) ? _h1 : (_h1 * METER_PER_FOOT);
             var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
 
             var result = new CResult();
-            for (int i = 0; i <= MAX_DISTANCE; i++)
+            for (int d = 0; d <= MAX_DISTANCE; d++)
             {
-                var r = P528(i, h1__meter, h2__meter, _f__mhz, _time, ref result);
+                // convert distance to specified units for input to P.528
+                d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
+
+                var r = P528(d__km, h1__meter, h2__meter, _f__mhz, _time, ref result);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
                     warnings = r;
 
-                d__km.Add(Math.Round(result.d__km, 3));
+                // convert output distance from P.528 back into user-specified units
+                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / KM_PER_NAUTICAL_MILE);
+
+                dists.Add(Math.Round(d_out, 3));
                 A__db.Add(Math.Round(result.A__db, 3));
                 A_fs__db.Add(Math.Round(result.A_fs__db, 3));
             }
@@ -391,13 +398,14 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1__meter,{_h1}");
-                fs.WriteLine($"h_2__meter,{_h2}");
+                fs.WriteLine($"h_1,{_h1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{_h2}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{_f__mhz}");
                 fs.WriteLine($"time%,{_time * 100}");
                 fs.WriteLine();
 
-                fs.WriteLine($"d__km,{String.Join(",", d__km)}");
+                fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                fs.WriteLine($"{String.Join(",", dists)}");
                 fs.WriteLine($"A__db,{String.Join(",", A__db)}");
                 fs.WriteLine($"A_fs__dB,{String.Join(",", A_fs__db)}");
             }
