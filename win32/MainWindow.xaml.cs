@@ -72,8 +72,8 @@ namespace p528_gui
 
         // warning text
         private readonly string TerminalHeightWarning = "Note: Although valid, the entered value is above the reference atmosphere which stops at 475 km above sea level";
-        private readonly string ModelConsistencyWarning = "Caution: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Take caution when using these results.";
-        private readonly string LowFrequencyWarning = "Caution: The entered frequency is less than the lower limit specified in P.528.  Take caution when using these results.";
+        private readonly string ModelConsistencyWarning = "Caution: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Caution should be taken when using the results.";
+        private readonly string LowFrequencyWarning = "Caution: The entered frequency is less than the lower limit specified in P.528.  Caution should be taken when using the results.";
 
         private IEnumerable<ObservablePoint> _pts_FS;
         private Units _units = Units.Meters;
