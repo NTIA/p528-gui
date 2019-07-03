@@ -31,7 +31,7 @@
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
 
-        <lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True">
+        <lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True" Margin="3">
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
                     <lvc:Axis.Separator>
