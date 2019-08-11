@@ -340,6 +340,10 @@ namespace p528_gui
             if (sfd.ShowDialog() != true)
                 return;
 
+            var exportOptionsWndw = new ExportOptionsWindow();
+            if (!exportOptionsWndw.ShowDialog().Value)
+                return;
+
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
 
@@ -347,6 +351,7 @@ namespace p528_gui
             var A__db = new List<double>();
             var A_fs__db = new List<double>();
             var dists = new List<double>();
+            var modes = new List<int>();
             int warnings = 0;
             double d__km, d_out;
 
@@ -372,6 +377,7 @@ namespace p528_gui
                 dists.Add(Math.Round(d_out, 3));
                 A__db.Add(Math.Round(result.A__db, 3));
                 A_fs__db.Add(Math.Round(result.A_fs__db, 3));
+                modes.Add(result.propagation_mode);
 
                 d++;
             }
@@ -401,10 +407,39 @@ namespace p528_gui
                 fs.WriteLine($"time%,{_time * 100}");
                 fs.WriteLine();
 
-                fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                fs.WriteLine($"{String.Join(",", dists)}");
-                fs.WriteLine($"A__db,{String.Join(",", A__db)}");
-                fs.WriteLine($"A_fs__dB,{String.Join(",", A_fs__db)}");
+                if (exportOptionsWndw.IncludeModeOfPropagation)
+                    fs.WriteLine("Mode of Propagation: 1 = Line-of-Sight; 2 = Diffraction; 3 = Troposcatter\n");
+
+                if (exportOptionsWndw.IsRowAlignedData)
+                {
+                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.WriteLine($"{String.Join(",", dists)}");
+                    fs.WriteLine($"A__db,{String.Join(",", A__db)}");
+                    if (exportOptionsWndw.IncludeFreeSpaceLoss)
+                        fs.WriteLine($"A_fs__db,{String.Join(",", A_fs__db)}");
+                    if (exportOptionsWndw.IncludeModeOfPropagation)
+                        fs.WriteLine($"Mode,{String.Join(",", modes)}");
+                }
+                else
+                {
+                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write("A__db");
+                    if (exportOptionsWndw.IncludeFreeSpaceLoss)
+                        fs.Write(",A_fs__db");
+                    if (exportOptionsWndw.IncludeModeOfPropagation)
+                        fs.Write(",PropMode");
+                    fs.WriteLine();
+
+                    for (int i = 0; i < A__db.Count; i++)
+                    {
+                        fs.Write($"{dists[i]},{A__db[i]}");
+                        if (exportOptionsWndw.IncludeFreeSpaceLoss)
+                            fs.Write($",{A_fs__db[i]}");
+                        if (exportOptionsWndw.IncludeModeOfPropagation)
+                            fs.Write($",{modes[i]}");
+                        fs.WriteLine();
+                    }
+                }
             }
 
             MessageBox.Show("Export Completed");

@@ -1,0 +1,53 @@
+﻿<Window x:Class="p528_gui.ExportOptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:p528_gui"
+        mc:Ignorable="d"
+        Title="CSV Export Options" SizeToContent="WidthAndHeight">
+    <DockPanel LastChildFill="True" Margin="3">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="3" DockPanel.Dock="Bottom">
+            <Button Content="Export" Width="75" Margin="3" Name="btn_Export" Click="Btn_Export_Click"/>
+            <Button Content="Cancel" Width="75" Margin="3" Name="btn_Cancel" Click="Btn_Cancel_Click"/>
+        </StackPanel>
+
+        <Grid Margin="3">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="Data Format" Margin="3" Grid.Row="0" Grid.Column="0">
+                <Grid Margin="3" VerticalAlignment="Top">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <RadioButton Grid.Row="0" Content="Row-Aligned" Margin="3" IsChecked="True" Name="rb_RowAlignedData"/>
+                    <RadioButton Grid.Row="1" Content="Column-Aligned" Margin="3"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Include..." Margin="3" Grid.Row="0" Grid.Column="1">
+                <Grid Margin="3">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <CheckBox Grid.Row="0" Content="Distance" IsChecked="True" IsEnabled="False" Margin="3"/>
+                    <CheckBox Grid.Row="1" Content="Basic Transmission Loss" IsChecked="True" IsEnabled="False" Margin="3"/>
+                    <CheckBox Grid.Row="2" Content="Free Space Loss" IsChecked="False" Margin="3" Name="cb_FreeSpaceLoss"/>
+                    <CheckBox Grid.Row="3" Content="Mode of Propagation" IsChecked="False" Margin="3" Name="cb_ModeOfPropagation"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
