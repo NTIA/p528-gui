@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         xmlns:local="clr-namespace:p528_gui"
+        xmlns:controls="clr-namespace:p528_gui.UserControls"
         mc:Ignorable="d"
         Title="ITS ITU-R Rec P.528 GUI" Height="600" Width="800"
         Icon="img\favicon.ico">
@@ -31,6 +32,10 @@
                     <MenuItem Header="Set Axis Limits" Name="mi_SetAxisLimits" Click="Mi_SetAxisLimits_Click"/>
                     <MenuItem Header="Reset to Defaults" Name="mi_ResetAxisLimits" Click="Mi_ResetAxisLimits_Click"/>
                 </MenuItem>
+                <MenuItem Header="Plot Mode...">
+                    <MenuItem Header="Single Curve" Name="mi_PlotMode_SingleCurve" IsChecked="True" Click="Mi_PlotMode_SingleCurve_Click"/>
+                    <MenuItem Header="Multiple Heights" Name="mi_PlotMode_MultipleHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHeights_Click" Visibility="Collapsed"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
@@ -55,39 +60,15 @@
             </lvc:CartesianChart.DataTooltip>
         </lvc:CartesianChart>
 
-        <Grid Grid.Row="2" Margin="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" >
+        <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
+            <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                 <TextBlock Name="tb_ConsistencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
                 <TextBlock Name="tb_FrequencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
             </StackPanel>
 
-            <TextBlock Name="tb_t1" Grid.Row="1" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1"/>
-            <Image Name="img_t1" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="img\Warning.png" Visibility="Collapsed"/>
-            <TextBlock Name="tb_t2" Grid.Row="2" Grid.Column="0" Text="Terminal 2 Height (m):" Margin="3" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h2"/>
-            <Image Name="img_t2" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="img\Warning.png" Visibility="Collapsed"/>
+            <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="3" Text="Frequency (MHz):" Margin="3" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="1" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq"/>
-            <TextBlock Grid.Row="2" Grid.Column="3" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="2" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_time"/>
-
-            <Button Grid.Row="2" Grid.Column="5" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click"/>
-        </Grid>
+            <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>
+        </DockPanel>
     </Grid>
 </Window>

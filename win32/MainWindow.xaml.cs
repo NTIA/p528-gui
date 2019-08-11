@@ -2,6 +2,7 @@
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
 using Microsoft.Win32;
+using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -44,26 +45,10 @@ namespace p528_gui
 
         public SeriesCollection PlotData { get; set; } = new SeriesCollection();
 
-        private double _h1;         // meters or feet
-        private double _h2;         // meters or feet
-        private double _f__mhz;     // MHz
-        private double _time;       // %
-
         private const int LOS_SERIES = 0;
         private const int DFRAC_SERIES = 1;
         private const int SCAT_SERIES = 2;
         private const int FS_SERIES = 3;
-
-        // unit conversion factors
-        private const double METER_PER_FOOT = 0.3048;
-        private const double KM_PER_NAUTICAL_MILE = 1.852;
-
-        private const int TOP_OF_ATMOSPHERE__KM = 475;
-
-        // warning text
-        private readonly string TerminalHeightWarning = "Note: Although valid, the entered value is above the reference atmosphere which stops at 475 km above sea level";
-        private readonly string ModelConsistencyWarning = "Caution: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Caution should be taken when using the results.";
-        private readonly string LowFrequencyWarning = "Caution: The entered frequency is less than the lower limit specified in P.528.  Caution should be taken when using the results.";
 
         private IEnumerable<ObservablePoint> _pts_FS;
         private Units _units = Units.Meters;
@@ -74,10 +59,9 @@ namespace p528_gui
 
             DataContext = this;
 
-            img_t1.ToolTip = TerminalHeightWarning;
-            img_t2.ToolTip = TerminalHeightWarning;
-            tb_ConsistencyWarning.Text = ModelConsistencyWarning;
-            tb_FrequencyWarning.Text = LowFrequencyWarning;
+            
+            tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
+            tb_FrequencyWarning.Text = Messages.LowFrequencyWarning;
             
             PlotData.Add(new LineSeries
             {
@@ -125,7 +109,7 @@ namespace p528_gui
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
         {
-            if (!AreInputsValid())
+            if (!singleCurveInputsCtrl.AreInputsValid())
                 return;
 
             mi_Export.IsEnabled = true;
@@ -156,101 +140,6 @@ namespace p528_gui
             }
         }
 
-        private double ConvertMetersToSpecifiedUnits(double meters)
-        {
-            return (_units == Units.Meters) ? meters : (meters / METER_PER_FOOT);
-        }
-
-        private double ConvertSpecifiedUnitsToKm(double value)
-        {
-            var value__meters = (_units == Units.Meters) ? value : (value * METER_PER_FOOT);
-
-            return value__meters / 1000.0;
-        }
-
-        /// <summary>
-        /// Validate user specified inputs
-        /// </summary>
-        /// <returns>Did input validation succeed?</returns>
-        private bool AreInputsValid()
-        {
-            if (String.IsNullOrEmpty(tb_h1.Text) ||
-                !Double.TryParse(tb_h1.Text, out double h1) ||
-                h1 < ConvertMetersToSpecifiedUnits(1.5))
-            {
-                ValidationError(tb_h1);
-                MessageBox.Show("Terminal 1 must be at least " + ((_units == Units.Meters) ? "1.5 meters" : "5 feet"));
-                return false;
-            }
-            else
-            {
-                ValidationSuccess(tb_h1);
-                _h1 = h1;
-
-                img_t1.Visibility = (ConvertSpecifiedUnitsToKm(_h1) <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (String.IsNullOrEmpty(tb_h2.Text) ||
-                !Double.TryParse(tb_h2.Text, out double h2) ||
-                h2 < ConvertMetersToSpecifiedUnits(1.5))
-            {
-                ValidationError(tb_h2);
-                MessageBox.Show("Terminal 2 must be at least " + ((_units == Units.Meters) ? "1.5 meters" : "5 feet"));
-                return false;
-            }
-            else
-            {
-                ValidationSuccess(tb_h2);
-                _h2 = h2;
-
-                img_t2.Visibility = (ConvertSpecifiedUnitsToKm(_h2) <= TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (h1 > h2)
-            {
-                ValidationError(tb_h1);
-                ValidationError(tb_h2);
-                MessageBox.Show("Terminal 1 must be less than the height of Terminal 2");
-            }
-            else
-            {
-                ValidationSuccess(tb_h1);
-                ValidationSuccess(tb_h2);
-            }
-
-            if (String.IsNullOrEmpty(tb_freq.Text) ||
-                !Double.TryParse(tb_freq.Text, out double f__mhz) ||
-                f__mhz < 100 ||
-                f__mhz > 15500)
-            {
-                ValidationError(tb_freq);
-                MessageBox.Show("The frequency must be between 100 MHz and 15 500 MHz, inclusive");
-                return false;
-            }
-            else
-            {
-                ValidationSuccess(tb_freq);
-                _f__mhz = f__mhz;
-            }
-
-            if (String.IsNullOrEmpty(tb_time.Text) ||
-                !Double.TryParse(tb_time.Text, out double time) ||
-                time < 1 ||
-                time > 99)
-            {
-                ValidationError(tb_time);
-                MessageBox.Show("The time percentage must be between 1 and 99, inclusive.");
-                return false;
-            }
-            else
-            {
-                ValidationSuccess(tb_time);
-                _time = time / 100;
-            }
-
-            return true;
-        }
-
         private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
         {
             losPoints = new List<Point>();
@@ -266,8 +155,8 @@ namespace p528_gui
             double d__km, d_out;
 
             // convert inputs into metric units
-            var h1__meter = (_units == Units.Meters) ? _h1 : (_h1 * METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
+            var h1__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H2 : (singleCurveInputsCtrl.H2 * Constants.METER_PER_FOOT);
 
             // iterate on user-specified units (km or n miles)
             double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
@@ -275,12 +164,12 @@ namespace p528_gui
             while (d <= xAxis.MaxValue)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
+                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528(d__km, h1__meter, h2__meter, _f__mhz, _time, ref result);
+                var r = P528(d__km, h1__meter, h2__meter, singleCurveInputsCtrl.FMHZ, singleCurveInputsCtrl.TIME, ref result);
 
                 // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / KM_PER_NAUTICAL_MILE);
+                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -317,16 +206,6 @@ namespace p528_gui
             return rtn;
         }
 
-        private void ValidationError(TextBox tb)
-        {
-            tb.Background = Brushes.LightPink;
-        }
-
-        private void ValidationSuccess(TextBox tb)
-        {
-            tb.Background = Brushes.White;
-        }
-
         private void Mi_Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
@@ -355,24 +234,24 @@ namespace p528_gui
             int warnings = 0;
             double d__km, d_out;
 
-            var h1__meter = (_units == Units.Meters) ? _h1 : (_h1 * METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
+            var h1__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
 
             var result = new CResult();
             double d = xAxis.MinValue;
             while (d <= xAxis.MaxValue)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
+                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528(d__km, h1__meter, h2__meter, _f__mhz, _time, ref result);
+                var r = P528(d__km, h1__meter, h2__meter, singleCurveInputsCtrl.FMHZ, singleCurveInputsCtrl.TIME, ref result);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
                     warnings = r;
 
                 // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / KM_PER_NAUTICAL_MILE);
+                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
 
                 dists.Add(Math.Round(d_out, 3));
                 A__db.Add(Math.Round(result.A__db, 3));
@@ -395,16 +274,16 @@ namespace p528_gui
                     fs.WriteLine();
 
                     if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
-                        fs.WriteLine(ModelConsistencyWarning);
+                        fs.WriteLine(Messages.ModelConsistencyWarning);
                     if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(LowFrequencyWarning);
+                        fs.WriteLine(Messages.LowFrequencyWarning);
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{_h1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{_h2}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{_f__mhz}");
-                fs.WriteLine($"time%,{_time * 100}");
+                fs.WriteLine($"h_1,{singleCurveInputsCtrl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{singleCurveInputsCtrl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"f__mhz,{singleCurveInputsCtrl.FMHZ}");
+                fs.WriteLine($"time%,{singleCurveInputsCtrl.TIME * 100}");
                 fs.WriteLine();
 
                 if (exportOptionsWndw.IncludeModeOfPropagation)
@@ -497,8 +376,7 @@ namespace p528_gui
         private void SetUnits()
         {
             // Update text
-            tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-            tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+            singleCurveInputsCtrl.Units = _units;
             xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
             ResetPlot();
             customToolTip.Units = _units;
@@ -554,6 +432,16 @@ namespace p528_gui
             yAxis.MaxValue = -100;
             yAxis.MinValue = -300;
             ySeparator.Step = 20;
+        }
+
+        private void Mi_PlotMode_SingleCurve_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Mi_PlotMode_MultipleHeights_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

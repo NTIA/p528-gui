@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace p528_gui
+namespace p528_gui.Windows
 {
     public partial class AxisLimitsWindow : Window
     {
@@ -118,13 +118,13 @@ namespace p528_gui
                 !Double.TryParse(tb_xAxisMinimum.Text, out double xMin) ||
                 xMin < 0)
             {
-                ValidationError(tb_xAxisMinimum);
+                Tools.ValidationError(tb_xAxisMinimum);
                 MessageBox.Show("Minimum value for X-Axis must be greater than zero");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_xAxisMinimum);
+                Tools.ValidationSuccess(tb_xAxisMinimum);
                 _xAxisMin = xMin;
             }
 
@@ -132,13 +132,13 @@ namespace p528_gui
                 !Double.TryParse(tb_xAxisMaximum.Text, out double xMax) ||
                 xMax <= _xAxisMin)
             {
-                ValidationError(tb_xAxisMaximum);
+                Tools.ValidationError(tb_xAxisMaximum);
                 MessageBox.Show("Maximum value for X-Axis must be greater then minimum for X-Axis");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_xAxisMaximum);
+                Tools.ValidationSuccess(tb_xAxisMaximum);
                 _xAxisMax = xMax;
             }
 
@@ -146,26 +146,26 @@ namespace p528_gui
                 !Double.TryParse(tb_xAxisStep.Text, out double xStep) ||
                 xStep <= 0)
             {
-                ValidationError(tb_xAxisStep);
+                Tools.ValidationError(tb_xAxisStep);
                 MessageBox.Show("Step value for X-Axis must be greater than zero");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_xAxisStep);
+                Tools.ValidationSuccess(tb_xAxisStep);
                 _xAxisStep = xStep;
             }
 
             if (String.IsNullOrEmpty(tb_yAxisMinimum.Text) ||
                 !Double.TryParse(tb_yAxisMinimum.Text, out double yMin))
             {
-                ValidationError(tb_yAxisMinimum);
+                Tools.ValidationError(tb_yAxisMinimum);
                 MessageBox.Show("Unable to parse minimum value for Y-Axis");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_yAxisMinimum);
+                Tools.ValidationSuccess(tb_yAxisMinimum);
                 _yAxisMin = yMin;
             }
 
@@ -173,13 +173,13 @@ namespace p528_gui
                 !Double.TryParse(tb_yAxisMaximum.Text, out double yMax) ||
                 yMax <= _yAxisMin)
             {
-                ValidationError(tb_yAxisMaximum);
+                Tools.ValidationError(tb_yAxisMaximum);
                 MessageBox.Show("Maximum value for Y-Axis must be greater then minimum for Y-Axis");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_yAxisMaximum);
+                Tools.ValidationSuccess(tb_yAxisMaximum);
                 _yAxisMax = yMax;
             }
 
@@ -187,27 +187,17 @@ namespace p528_gui
                 !Double.TryParse(tb_yAxisStep.Text, out double yStep) ||
                 yStep <= 0)
             {
-                ValidationError(tb_yAxisStep);
+                Tools.ValidationError(tb_yAxisStep);
                 MessageBox.Show("Step value for Y-Axis must be greater than zero");
                 return false;
             }
             else
             {
-                ValidationSuccess(tb_yAxisStep);
+                Tools.ValidationSuccess(tb_yAxisStep);
                 _yAxisStep = yStep;
             }
 
             return true;
-        }
-
-        private void ValidationError(TextBox tb)
-        {
-            tb.Background = Brushes.LightPink;
-        }
-
-        private void ValidationSuccess(TextBox tb)
-        {
-            tb.Background = Brushes.White;
         }
     }
 }

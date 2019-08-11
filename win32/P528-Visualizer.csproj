@@ -64,11 +64,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="AboutWindow.xaml">
+    <Compile Include="Constants.cs" />
+    <Compile Include="Messages.cs" />
+    <Compile Include="Tools.cs" />
+    <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
+      <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Windows\AboutWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="AxisLimitsWindow.xaml">
+    <Page Include="Windows\AxisLimitsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -76,7 +82,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ExportOptionsWindow.xaml">
+    <Page Include="Windows\ExportOptionsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -84,26 +90,30 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="AboutWindow.xaml.cs">
+    <Compile Include="Windows\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AxisLimitsWindow.xaml.cs">
+    <Compile Include="Windows\AxisLimitsWindow.xaml.cs">
       <DependentUpon>AxisLimitsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CustomToolTip.xaml.cs">
       <DependentUpon>CustomToolTip.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ExportOptionsWindow.xaml.cs">
+    <Compile Include="Windows\ExportOptionsWindow.xaml.cs">
       <DependentUpon>ExportOptionsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UserControls\SingleCurveInputsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NativeStructs.cs" />
