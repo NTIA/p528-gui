@@ -22,8 +22,10 @@
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="Options">
+            <MenuItem Header="View" Name="mi_SingleCurve_View" Visibility="Visible">
                 <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
+            </MenuItem>
+            <MenuItem Header="Options">
                 <MenuItem Header="Units...">
                     <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
                     <MenuItem Header="Feet/Nautical Miles" Name="mi_Units_Feet" IsChecked="False" Click="Mi_Units_Feet_Click"/>
@@ -34,7 +36,7 @@
                 </MenuItem>
                 <MenuItem Header="Plot Mode...">
                     <MenuItem Header="Single Curve" Name="mi_PlotMode_SingleCurve" IsChecked="True" Click="Mi_PlotMode_SingleCurve_Click"/>
-                    <MenuItem Header="Multiple Heights" Name="mi_PlotMode_MultipleHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHeights_Click" Visibility="Collapsed"/>
+                    <MenuItem Header="Multiple Heights" Name="mi_PlotMode_MultipleHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHeights_Click"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
@@ -68,7 +70,9 @@
 
             <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click"/>
 
-            <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>
+            <Grid Name="grid_Controls">
+                <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>
+            </Grid>
         </DockPanel>
     </Grid>
 </Window>

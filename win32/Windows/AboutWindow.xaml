@@ -47,6 +47,6 @@
             <Hyperlink NavigateUri="https://github.com/NTIA/p528-gui" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/NTIA/p528-gui</Hyperlink>
         </TextBlock>
 
-        <Image Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Source="img\logo.png" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3"/>
+        <Image Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Source="..\img\logo.png" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3"/>
     </Grid>
 </Window>

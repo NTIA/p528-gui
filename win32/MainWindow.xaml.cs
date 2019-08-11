@@ -2,6 +2,8 @@
 using LiveCharts.Defaults;
 using LiveCharts.Wpf;
 using Microsoft.Win32;
+using p528_gui.Interfaces;
+using p528_gui.UserControls;
 using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
@@ -59,10 +61,16 @@ namespace p528_gui
 
             DataContext = this;
 
-            
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
             tb_FrequencyWarning.Text = Messages.LowFrequencyWarning;
-            
+
+            ConfigurePlotForSingleCurve();
+
+            SetUnits();
+        }
+
+        private void ConfigurePlotForSingleCurve()
+        {
             PlotData.Add(new LineSeries
             {
                 Title = "Line of Sight",
@@ -103,18 +111,30 @@ namespace p528_gui
                 Values = new ChartValues<ObservablePoint>(),
                 Fill = new SolidColorBrush() { Opacity = 0 }
             });
+        }
 
-            SetUnits();
+        private void ConfigurePlotForMultipleHeightCurves()
+        {
+            PlotData.Clear();
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
         {
-            if (!singleCurveInputsCtrl.AreInputsValid())
+            if (mi_PlotMode_SingleCurve.IsChecked)
+                RenderSingleCurve();
+            else if (mi_PlotMode_MultipleHeights.IsChecked)
+                RenderMultipleHeights();
+        }
+
+        private void RenderSingleCurve()
+        {
+            var inputConrol = grid_Controls.Children[0] as SingleCurveInputsControl;
+            if (!inputConrol.AreInputsValid())
                 return;
 
             mi_Export.IsEnabled = true;
 
-            var rtn = GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+            var rtn = GetPointsEx(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
             // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
@@ -140,7 +160,75 @@ namespace p528_gui
             }
         }
 
-        private int GetPoints(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
+        private void RenderMultipleHeights()
+        {
+            var inputControl = grid_Controls.Children[0] as MultipleHeightsInputsControl;
+            if (!inputControl.AreInputsValid())
+                return;
+
+            PlotData.Clear();
+
+            // convert inputs into metric units
+            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
+            List<double> h_2s__meter = new List<double>();
+            for (int i = 0; i < inputControl.H2s.Count; i++)
+            {
+                double h2 = inputControl.H2s[i];
+                double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
+
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
+
+                // Convert to Observable Points for Plotting Library currently in use
+                var obpts = pts.Select(x => new ObservablePoint(x.X, x.Y));
+
+                PlotData.Add(new LineSeries
+                {
+                    Title = $"{h2} {_units.ToString()}",
+                    PointGeometry = null,
+                    Stroke = Tools.GetBrush(i),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(obpts),
+                    Fill = new SolidColorBrush() { Opacity = 0 },
+                });
+
+                
+            }
+        }
+
+        private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> lossPoints)
+        {
+            lossPoints = new List<Point>();
+
+            var result = new CResult();
+            int rtn = 0;
+
+            // iterate on user-specified units (km or n miles)
+            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
+            double d = xAxis.MinValue;
+            double d__km, d_out;
+            while (d <= xAxis.MaxValue)
+            {
+                // convert distance to specified units for input to P.528
+                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+
+                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
+
+                // convert output distance from P.528 back into user-specified units
+                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+
+                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
+                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
+                    rtn = r;
+
+                lossPoints.Add(new Point(d_out, result.A__db));
+
+                d += d_step;
+            }
+
+            return rtn;
+        }
+
+        private int GetPointsEx(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
         {
             losPoints = new List<Point>();
             dfracPoints = new List<Point>();
@@ -376,16 +464,21 @@ namespace p528_gui
         private void SetUnits()
         {
             // Update text
-            singleCurveInputsCtrl.Units = _units;
+            (grid_Controls.Children[0] as IUnitEnabled).Units = _units;
             xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
             ResetPlot();
             customToolTip.Units = _units;
 
             // Clear plot data
-            PlotData[LOS_SERIES].Values.Clear();
-            PlotData[DFRAC_SERIES].Values.Clear();
-            PlotData[SCAT_SERIES].Values.Clear();
-            PlotData[FS_SERIES].Values.Clear();
+            if (mi_PlotMode_SingleCurve.IsChecked)
+            {
+                PlotData[LOS_SERIES].Values.Clear();
+                PlotData[DFRAC_SERIES].Values.Clear();
+                PlotData[SCAT_SERIES].Values.Clear();
+                PlotData[FS_SERIES].Values.Clear();
+            }
+            else
+                PlotData.Clear();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
@@ -436,12 +529,24 @@ namespace p528_gui
 
         private void Mi_PlotMode_SingleCurve_Click(object sender, RoutedEventArgs e)
         {
+            mi_PlotMode_SingleCurve.IsChecked = true;
+            mi_PlotMode_MultipleHeights.IsChecked = false;
 
+            grid_Controls.Children.Clear();
+            grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
+            ConfigurePlotForSingleCurve();
+            mi_SingleCurve_View.Visibility = Visibility.Visible;
         }
 
         private void Mi_PlotMode_MultipleHeights_Click(object sender, RoutedEventArgs e)
         {
+            mi_PlotMode_SingleCurve.IsChecked = false;
+            mi_PlotMode_MultipleHeights.IsChecked = true;
 
+            grid_Controls.Children.Clear();
+            grid_Controls.Children.Add(new MultipleHeightsInputsControl() { Units = _units });
+            ConfigurePlotForMultipleHeightCurves();
+            mi_SingleCurve_View.Visibility = Visibility.Collapsed;
         }
     }
 }

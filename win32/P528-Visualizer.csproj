@@ -65,12 +65,24 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
+    <Compile Include="Interfaces\IUnitEnabled.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Tools.cs" />
+    <Compile Include="UserControls\MultipleHeightsInputsControl.xaml.cs">
+      <DependentUpon>MultipleHeightsInputsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
       <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
     </Compile>
+    <Page Include="UserControls\MultipleHeightsInputsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\AboutWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\AddHeightWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -96,6 +108,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Windows\AddHeightWindow.xaml.cs">
+      <DependentUpon>AddHeightWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\AxisLimitsWindow.xaml.cs">
       <DependentUpon>AxisLimitsWindow.xaml</DependentUpon>
