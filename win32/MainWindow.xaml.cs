@@ -23,17 +23,6 @@ using System.Windows.Shapes;
 
 namespace p528_gui
 {
-    [StructLayout(LayoutKind.Sequential), Serializable]
-    public struct CResult
-    {
-        public int propagation_mode;
-        public int los_iterations;
-
-        public double d__km;
-        public double A__db;
-        public double A_fs__db;
-    }
-
     public enum Units
     {
         Meters,
@@ -43,7 +32,11 @@ namespace p528_gui
     public partial class MainWindow : Window
     {
         [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "Main")]
-        private static extern int P528(double d__km, double h_1__meter, double h_2__meter, double f__mhz, double time_percentage, ref CResult result);
+        internal static extern int P528(double d__km, double h_1__meter, double h_2__meter, double f__mhz, double time_percentage, ref CResult result);
+
+        [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "MainEx")]
+        internal static extern int P528EX(double d__km, double h_1__meter, double h_2__meter, double f__mhz, double time_percentage, ref CResult result,
+            ref Terminal terminal_1, ref Terminal terminal_2, ref TroposcatterParams tropo, ref Path path, ref LineOfSightParams los_params);
 
         private const int ERROR_HEIGHT_AND_DISTANCE = 10;
         private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
