@@ -27,13 +27,8 @@ namespace p528_gui.Windows
 
         private void Btn_Accept_Click(object sender, RoutedEventArgs e)
         {
-            if (String.IsNullOrEmpty(tb_h2.Text) ||
-                !Double.TryParse(tb_h2.Text, out double h2) ||
-                h2 < Tools.ConvertMetersToSpecifiedUnits(1.5, Units))
-            {
+            if (!Tools.ValidateH2(tb_h2.Text, Units, out double h2))
                 Tools.ValidationError(tb_h2);
-                MessageBox.Show("Terminal 2 must be at least " + ((Units == Units.Meters) ? "1.5 meters" : "5 feet"));
-            }
             else
             {
                 Tools.ValidationSuccess(tb_h2);
