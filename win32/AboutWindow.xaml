@@ -34,7 +34,12 @@
             <Hyperlink NavigateUri="https://www.its.bldrdoc.gov/" RequestNavigate="Hyperlink_RequestNavigate">https://www.its.bldrdoc.gov/</Hyperlink>
         </TextBlock>
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Application Version:"/>
-        <TextBlock Grid.Row="2" Grid.Column="1" Text="X.X.X" Name="tb_AppVersion"/>
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+            <TextBlock Text="X.X.X" Name="tb_AppVersion"/>
+            <TextBlock Name="tb_NewVersion" Visibility="Hidden">
+                <Hyperlink NavigateUri="https://github.com/NTIA/p528-gui/releases" RequestNavigate="Hyperlink_RequestNavigate">New Version Available!</Hyperlink>
+            </TextBlock>
+        </StackPanel>
         <TextBlock Grid.Row="3" Grid.Column="0" Text="P.528 DLL Version:"/>
         <TextBlock Grid.Row="3" Grid.Column="1" Text="X.X.X" Name="tb_DllVersion"/>
         <TextBlock Grid.Row="4" Grid.Column="0" Text="GitHub Repo:"/>
