@@ -461,8 +461,7 @@ namespace p528_gui
             tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
             tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
             xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
-            xAxis.MaxValue = (_units == Units.Meters) ? 1800 : 970;
-            xSeparator.Step = (_units == Units.Meters) ? 200 : 100;
+            ResetPlot();
             customToolTip.Units = _units;
 
             // Clear plot data
@@ -470,6 +469,50 @@ namespace p528_gui
             PlotData[DFRAC_SERIES].Values.Clear();
             PlotData[SCAT_SERIES].Values.Clear();
             PlotData[FS_SERIES].Values.Clear();
+        }
+
+        private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
+        {
+            var limitsWndw = new AxisLimitsWindow()
+            {
+                XAxisUnit = (_units == Units.Meters) ? "km" : "n mile",
+                XAxisMaximum = xAxis.MaxValue,
+                XAxisMinimum = xAxis.MinValue,
+                XAxisStep = xSeparator.Step,
+                YAxisMaximum = yAxis.MaxValue,
+                YAxisMinimum = yAxis.MinValue,
+                YAxisStep = ySeparator.Step
+            };
+
+            if (!limitsWndw.ShowDialog().Value)
+                return;
+
+            xAxis.MaxValue = limitsWndw.XAxisMaximum;
+            xAxis.MinValue = limitsWndw.XAxisMinimum;
+            xSeparator.Step = limitsWndw.XAxisStep;
+
+            yAxis.MaxValue = limitsWndw.YAxisMaximum;
+            yAxis.MinValue = limitsWndw.YAxisMinimum;
+            ySeparator.Step = limitsWndw.YAxisStep;
+        }
+
+        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e)
+        {
+            ResetPlot();
+        }
+
+        private void ResetPlot()
+        {
+            if (_units == Units.Meters)
+                xAxis.MaxValue = 1800;
+            else
+                xAxis.MaxValue = 970;
+
+            xAxis.MinValue = 0;
+            xSeparator.Step = 200;
+            yAxis.MaxValue = -100;
+            yAxis.MinValue = -300;
+            ySeparator.Step = 20;
         }
     }
 }

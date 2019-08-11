@@ -27,6 +27,10 @@
                     <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
                     <MenuItem Header="Feet/Nautical Miles" Name="mi_Units_Feet" IsChecked="False" Click="Mi_Units_Feet_Click"/>
                 </MenuItem>
+                <MenuItem Header="Plot Axis...">
+                    <MenuItem Header="Set Axis Limits" Name="mi_SetAxisLimits" Click="Mi_SetAxisLimits_Click"/>
+                    <MenuItem Header="Reset to Defaults" Name="mi_ResetAxisLimits" Click="Mi_ResetAxisLimits_Click"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
@@ -40,7 +44,11 @@
                 </lvc:Axis>
             </lvc:CartesianChart.AxisX>
             <lvc:CartesianChart.AxisY>
-                <lvc:Axis Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300"/>
+                <lvc:Axis Name="yAxis" Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300">
+                    <lvc:Axis.Separator>
+                        <lvc:Separator x:Name="ySeparator" Step="20"/>
+                    </lvc:Axis.Separator>
+                </lvc:Axis>
             </lvc:CartesianChart.AxisY>
             <lvc:CartesianChart.DataTooltip>
                 <local:CustomToolTip x:Name="customToolTip" SelectionMode="OnlySender"/>
