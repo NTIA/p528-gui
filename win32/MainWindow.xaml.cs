@@ -49,9 +49,6 @@ namespace p528_gui
         private double _f__mhz;     // MHz
         private double _time;       // %
 
-        private const double MAX_DISTANCE = 1800;   // km or n miles
-        private const int PLOT_STEP = 1;            // km or n miles
-
         private const int LOS_SERIES = 0;
         private const int DFRAC_SERIES = 1;
         private const int SCAT_SERIES = 2;
@@ -273,7 +270,9 @@ namespace p528_gui
             var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
 
             // iterate on user-specified units (km or n miles)
-            for (int d = 0; d <= MAX_DISTANCE; d += PLOT_STEP)
+            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
+            double d = xAxis.MinValue;
+            while (d <= xAxis.MaxValue)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
@@ -311,6 +310,8 @@ namespace p528_gui
                 }
 
                 fsPoints.Add(new Point(d_out, result.A_fs__db));
+
+                d += d_step;
             }
 
             return rtn;
@@ -353,7 +354,8 @@ namespace p528_gui
             var h2__meter = (_units == Units.Meters) ? _h2 : (_h2 * METER_PER_FOOT);
 
             var result = new CResult();
-            for (int d = 0; d <= MAX_DISTANCE; d++)
+            double d = xAxis.MinValue;
+            while (d <= xAxis.MaxValue)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * KM_PER_NAUTICAL_MILE);
@@ -370,6 +372,8 @@ namespace p528_gui
                 dists.Add(Math.Round(d_out, 3));
                 A__db.Add(Math.Round(result.A__db, 3));
                 A_fs__db.Add(Math.Round(result.A_fs__db, 3));
+
+                d++;
             }
 
             using (var fs = new StreamWriter(sfd.FileName))
@@ -499,6 +503,8 @@ namespace p528_gui
         private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e)
         {
             ResetPlot();
+
+            Btn_Render_Click(null, null);
         }
 
         private void ResetPlot()
