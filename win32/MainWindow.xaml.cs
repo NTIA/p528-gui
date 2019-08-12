@@ -347,6 +347,8 @@ namespace p528_gui
 
         private void Mi_Export_Click(object sender, RoutedEventArgs e)
         {
+            var inputControl = grid_Controls.Children[0] as SingleCurveInputsControl;
+
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "CSV file (*.csv)|*.csv";
 
@@ -368,8 +370,10 @@ namespace p528_gui
             int warnings = 0;
             double d__km, d_out;
 
-            var h1__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
+            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.FMHZ;
+            double time = inputControl.TIME;
 
             var result = new CResult();
             double d = xAxis.MinValue;
@@ -378,7 +382,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528(d__km, h1__meter, h2__meter, singleCurveInputsCtrl.FMHZ, singleCurveInputsCtrl.TIME, ref result);
+                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -414,10 +418,10 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{singleCurveInputsCtrl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{singleCurveInputsCtrl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{singleCurveInputsCtrl.FMHZ}");
-                fs.WriteLine($"time%,{singleCurveInputsCtrl.TIME * 100}");
+                fs.WriteLine($"h_1,{h_1__meter}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{h_2__meter}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"f__mhz,{f__mhz}");
+                fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
 
                 if (exportOptionsWndw.IncludeModeOfPropagation)
