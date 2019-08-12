@@ -1,5 +1,4 @@
-﻿using p528_gui.Interfaces;
-using p528_gui.Windows;
+﻿using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +16,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleHeightsInputsControl : UserControl, IUnitEnabled
+    public partial class MultipleTimeInputsControl : UserControl
     {
         private Units _units;
         public Units Units
@@ -27,19 +26,19 @@ namespace p528_gui.UserControls
             {
                 _units = value;
                 tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-                tb_t2.Text = "Terminal 2 Heights " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+                tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
             }
         }
 
         public double H1 { get; set; }
 
-        public List<double> H2s { get; set; } = new List<double>();
+        public double H2 { get; set; }
 
         public double FMHZ { get; set; }
 
-        public double TIME { get; set; }
+        public List<double> TIMEs { get; set; } = new List<double>();
 
-        public MultipleHeightsInputsControl()
+        public MultipleTimeInputsControl()
         {
             InitializeComponent();
         }
@@ -54,27 +53,24 @@ namespace p528_gui.UserControls
                 H1 = h_1;
             }
 
-            H2s.Clear();
-            foreach (ListBoxItem item in lb_h2s.Items)
+            if (!Tools.ValidateH2(tb_h2.Text, _units, out double h_2))
+                return Tools.ValidationError(tb_h2);
+            else
             {
-                string h2 = item.Content.ToString();
+                Tools.ValidationSuccess(tb_h2);
+                H2 = h_2;
+            }
 
-                if (!Tools.ValidateH2(h2, _units, out double h_2))
-                    return false;
-                else
-                {
-                    if (h_1 > h_2)
-                    {
-                        Tools.ValidationError(tb_h1);
-                        MessageBox.Show(Messages.Terminal1LessThan2Error);
-                    }
-                    else
-                    {
-                        Tools.ValidationSuccess(tb_h1);
-
-                        H2s.Add(h_2);
-                    }
-                }
+            if (H1 > H2)
+            {
+                Tools.ValidationError(tb_h1);
+                Tools.ValidationError(tb_h2);
+                MessageBox.Show(Messages.Terminal1LessThan2Error);
+            }
+            else
+            {
+                Tools.ValidationSuccess(tb_h1);
+                Tools.ValidationSuccess(tb_h2);
             }
 
             if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
@@ -85,39 +81,42 @@ namespace p528_gui.UserControls
                 FMHZ = f__mhz;
             }
 
-            if (!Tools.ValidateTIME(tb_time.Text, out double time))
-                return Tools.ValidationError(tb_time);
-            else
+            TIMEs.Clear();
+            foreach (ListBoxItem item in lb_times.Items)
             {
-                Tools.ValidationSuccess(tb_time);
-                TIME = time / 100;
+                string TIME = item.Content.ToString();
+
+                if (!Tools.ValidateTIME(TIME, out double time))
+                    return false;
+                else
+                    TIMEs.Add(time / 100);
             }
 
             return true;
         }
 
-        private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
+        private void Lb_times_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_times.SelectedItems.Count > 0);
+
+        private void Btn_Add_Click(object sender, RoutedEventArgs e)
         {
-            var wndw = new AddHeightWindow() { Units = _units };
+            var wndw = new AddTimeWindow();
 
             if (!wndw.ShowDialog().Value)
                 return;
 
-            lb_h2s.Items.Add(new ListViewItem() { Content = wndw.H2 });
+            lb_times.Items.Add(new ListViewItem() { Content = wndw.TIME });
         }
-
-        private void Lb_h2s_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_h2s.SelectedItems.Count > 0);
 
         private void Btn_Remove_Click(object sender, RoutedEventArgs e)
         {
             var itemsToRemove = new List<ListViewItem>();
 
-            foreach (ListViewItem item in lb_h2s.SelectedItems)
+            foreach (ListViewItem item in lb_times.SelectedItems)
                 itemsToRemove.Add(item);
 
             foreach (var item in itemsToRemove)
             {
-                lb_h2s.Items.Remove(item);
+                lb_times.Items.Remove(item);
             }
         }
     }

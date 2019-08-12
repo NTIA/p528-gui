@@ -1,0 +1,23 @@
+﻿<Window x:Class="p528_gui.Windows.AddTimeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:p528_gui.Windows"
+        mc:Ignorable="d"
+        Title="Add Time..." SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
+    <DockPanel LastChildFill="True" Margin="3">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="3">
+            <Button Name="btn_Accept" Content="Accept" Width="75" Click="Btn_Accept_Click" Margin="3"/>
+            <Button Name="btn_Cancel" Content="Cancel" Width="75" Click="Btn_Cancel_Click" Margin="3"/>
+        </StackPanel>
+        <Grid Margin="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" Width="150" Margin="3" HorizontalAlignment="Stretch" Name="tb_time"/>
+        </Grid>
+    </DockPanel>
+</Window>

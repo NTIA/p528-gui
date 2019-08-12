@@ -118,12 +118,19 @@ namespace p528_gui
             PlotData.Clear();
         }
 
+        private void ConfigurePlotForMultipleTimeCurves()
+        {
+            PlotData.Clear();
+        }
+
         private void Btn_Render_Click(object sender, RoutedEventArgs e)
         {
             if (mi_PlotMode_SingleCurve.IsChecked)
                 RenderSingleCurve();
             else if (mi_PlotMode_MultipleHeights.IsChecked)
                 RenderMultipleHeights();
+            else if (mi_PlotMode_MultipleTimePercentages.IsChecked)
+                RenderMultipleTimes();
         }
 
         private void RenderSingleCurve()
@@ -190,8 +197,39 @@ namespace p528_gui
                     Values = new ChartValues<ObservablePoint>(obpts),
                     Fill = new SolidColorBrush() { Opacity = 0 },
                 });
+            }
+        }
 
-                
+        private void RenderMultipleTimes()
+        {
+            var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
+            if (!inputControl.AreInputsValid())
+                return;
+
+            PlotData.Clear();
+
+            // convert inputs into metric units
+            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+            List<double> times = new List<double>();
+            for (int i = 0; i < inputControl.TIMEs.Count; i++)
+            {
+                double time = inputControl.TIMEs[i];
+
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, time, out List<Point> pts);
+
+                // Convert to Observable Points for Plotting Library currently in use
+                var obpts = pts.Select(x => new ObservablePoint(x.X, x.Y));
+
+                PlotData.Add(new LineSeries
+                {
+                    Title = $"{time * 100}%",
+                    PointGeometry = null,
+                    Stroke = Tools.GetBrush(i),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(obpts),
+                    Fill = new SolidColorBrush() { Opacity = 0 },
+                });
             }
         }
 
@@ -531,6 +569,7 @@ namespace p528_gui
         {
             mi_PlotMode_SingleCurve.IsChecked = true;
             mi_PlotMode_MultipleHeights.IsChecked = false;
+            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
@@ -542,10 +581,23 @@ namespace p528_gui
         {
             mi_PlotMode_SingleCurve.IsChecked = false;
             mi_PlotMode_MultipleHeights.IsChecked = true;
+            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleHeightsInputsControl() { Units = _units });
             ConfigurePlotForMultipleHeightCurves();
+            mi_SingleCurve_View.Visibility = Visibility.Collapsed;
+        }
+
+        private void Mi_PlotMode_MultipleTimePercentages_Click(object sender, RoutedEventArgs e)
+        {
+            mi_PlotMode_SingleCurve.IsChecked = false;
+            mi_PlotMode_MultipleHeights.IsChecked = false;
+            mi_PlotMode_MultipleTimePercentages.IsChecked = true;
+
+            grid_Controls.Children.Clear();
+            grid_Controls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
+            ConfigurePlotForMultipleTimeCurves();
             mi_SingleCurve_View.Visibility = Visibility.Collapsed;
         }
     }
