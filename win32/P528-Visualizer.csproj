@@ -66,6 +66,7 @@
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
     <Compile Include="Interfaces\IUnitEnabled.cs" />
+    <Compile Include="Interfaces\IInputValidation.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Tools.cs" />
     <Compile Include="UserControls\MultipleHeightsInputsControl.xaml.cs">

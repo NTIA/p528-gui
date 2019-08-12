@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleHeightsInputsControl : UserControl, IUnitEnabled
+    public partial class MultipleHeightsInputsControl : UserControl, IUnitEnabled, IInputValidation
     {
         private Units _units;
         public Units Units

@@ -32,6 +32,13 @@ namespace p528_gui
         Feet
     }
 
+    public enum ApplicationMode
+    {
+        SingleCurve,
+        MultipleHeights,
+        MultipleTimes
+    }
+
     public partial class MainWindow : Window
     {
         [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "Main")]
@@ -52,8 +59,12 @@ namespace p528_gui
         private const int SCAT_SERIES = 2;
         private const int FS_SERIES = 3;
 
-        private IEnumerable<ObservablePoint> _pts_FS;
         private Units _units = Units.Meters;
+        private bool _showModeOfProp = true;
+        private bool _showFreeSpaceLine = true;
+
+        private delegate void RenderPlot();
+        private RenderPlot Render;
 
         public MainWindow()
         {
@@ -64,74 +75,12 @@ namespace p528_gui
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
             tb_FrequencyWarning.Text = Messages.LowFrequencyWarning;
 
-            ConfigurePlotForSingleCurve();
-
             SetUnits();
+
+            Render = RenderSingleCurve;
         }
 
-        private void ConfigurePlotForSingleCurve()
-        {
-            PlotData.Add(new LineSeries
-            {
-                Title = "Line of Sight",
-                PointGeometry = null,
-                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
-                StrokeThickness = 5,
-                Values = new ChartValues<ObservablePoint>(),
-                Fill = new SolidColorBrush() { Opacity = 0 }
-            });
-
-            PlotData.Add(new LineSeries
-            {
-                Title = "Diffraction",
-                PointGeometry = null,
-                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2"),
-                StrokeThickness = 5,
-                Values = new ChartValues<ObservablePoint>(),
-                Fill = new SolidColorBrush() { Opacity = 0 }
-            });
-
-            PlotData.Add(new LineSeries
-            {
-                Title = "Troposcatter",
-                PointGeometry = null,
-                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00"),
-                StrokeThickness = 5,
-                Values = new ChartValues<ObservablePoint>(),
-                Fill = new SolidColorBrush() { Opacity = 0 }
-            });
-
-            PlotData.Add(new LineSeries
-            {
-                Title = "Free Space",
-                PointGeometry = null,
-                StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
-                StrokeThickness = 1,
-                Values = new ChartValues<ObservablePoint>(),
-                Fill = new SolidColorBrush() { Opacity = 0 }
-            });
-        }
-
-        private void ConfigurePlotForMultipleHeightCurves()
-        {
-            PlotData.Clear();
-        }
-
-        private void ConfigurePlotForMultipleTimeCurves()
-        {
-            PlotData.Clear();
-        }
-
-        private void Btn_Render_Click(object sender, RoutedEventArgs e)
-        {
-            if (mi_PlotMode_SingleCurve.IsChecked)
-                RenderSingleCurve();
-            else if (mi_PlotMode_MultipleHeights.IsChecked)
-                RenderMultipleHeights();
-            else if (mi_PlotMode_MultipleTimePercentages.IsChecked)
-                RenderMultipleTimes();
-        }
+        private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
 
         private void RenderSingleCurve()
         {
@@ -141,29 +90,78 @@ namespace p528_gui
 
             mi_Export.IsEnabled = true;
 
-            var rtn = GetPointsEx(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+            // convert inputs into metric units
+            var h1__meter = (_units == Units.Meters) ? inputConrol.H1 : (inputConrol.H1 * Constants.METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? inputConrol.H2 : (inputConrol.H2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputConrol.FMHZ;
+            double time = inputConrol.TIME;
+
+            int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, out List<Point>btgPoints, 
+                out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
             // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
             tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
 
-            // Convert to Observable Points for Plotting Library currently in use
-            var pts_LOS = losPoints.Select(x => new ObservablePoint(x.X, x.Y));
-            var pts_DFRAC = dfracPoints.Select(x => new ObservablePoint(x.X, x.Y));
-            var pts_SCAT = scatPoints.Select(x => new ObservablePoint(x.X, x.Y));
-            _pts_FS = fsPoints.Select(x => new ObservablePoint(x.X, x.Y));
-
             // Plot the data
-            PlotData[LOS_SERIES].Values.Clear();
-            PlotData[LOS_SERIES].Values.AddRange(pts_LOS);
-            PlotData[DFRAC_SERIES].Values.Clear();
-            PlotData[DFRAC_SERIES].Values.AddRange(pts_DFRAC);
-            PlotData[SCAT_SERIES].Values.Clear();
-            PlotData[SCAT_SERIES].Values.AddRange(pts_SCAT);
-            if (mi_FreeSpace.IsChecked)
+            PlotData.Clear();
+            if (_showModeOfProp)
             {
-                PlotData[FS_SERIES].Values.Clear();
-                PlotData[FS_SERIES].Values.AddRange(_pts_FS);
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Line of Sight",
+                    PointGeometry = null,
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(losPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
+                });
+
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Diffraction",
+                    PointGeometry = null,
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2"),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(dfracPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
+                });
+
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Troposcatter",
+                    PointGeometry = null,
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00"),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(scatPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
+                });
+            }
+            else
+            {
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Basic Transmission Gain",
+                    PointGeometry = null,
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(btgPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
+                });
+            }
+
+            if (_showFreeSpaceLine)
+            {
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Free Space",
+                    PointGeometry = null,
+                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
+                    StrokeThickness = 1,
+                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
+                });
             }
         }
 
@@ -185,16 +183,14 @@ namespace p528_gui
 
                 int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
 
-                // Convert to Observable Points for Plotting Library currently in use
-                var obpts = pts.Select(x => new ObservablePoint(x.X, x.Y));
-
+                // Plot the data
                 PlotData.Add(new LineSeries
                 {
                     Title = $"{h2} {_units.ToString()}",
                     PointGeometry = null,
                     Stroke = Tools.GetBrush(i),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(obpts),
+                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
                     Fill = new SolidColorBrush() { Opacity = 0 },
                 });
             }
@@ -208,27 +204,43 @@ namespace p528_gui
 
             PlotData.Clear();
 
-            // convert inputs into metric units
+            double f__mhz = inputControl.FMHZ;
             double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
             double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+
             List<double> times = new List<double>();
             for (int i = 0; i < inputControl.TIMEs.Count; i++)
             {
                 double time = inputControl.TIMEs[i];
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, time, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, out List<Point> pts);
 
-                // Convert to Observable Points for Plotting Library currently in use
-                var obpts = pts.Select(x => new ObservablePoint(x.X, x.Y));
-
+                // Plot the data
                 PlotData.Add(new LineSeries
                 {
                     Title = $"{time * 100}%",
                     PointGeometry = null,
                     Stroke = Tools.GetBrush(i),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(obpts),
+                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
                     Fill = new SolidColorBrush() { Opacity = 0 },
+                });
+            }
+
+            if (_showFreeSpaceLine)
+            {
+                GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, out List<Point> btgPoints, 
+                    out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+
+                PlotData.Add(new LineSeries
+                {
+                    Title = "Free Space",
+                    PointGeometry = null,
+                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
+                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
+                    StrokeThickness = 1,
+                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 }
                 });
             }
         }
@@ -266,12 +278,14 @@ namespace p528_gui
             return rtn;
         }
 
-        private int GetPointsEx(out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
+        private int GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> btgPoints, 
+            out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
         {
             losPoints = new List<Point>();
             dfracPoints = new List<Point>();
             scatPoints = new List<Point>();
             fsPoints = new List<Point>();
+            btgPoints = new List<Point>();
 
             bool dfracSwitch = false;
             bool scatSwitch = false;
@@ -279,10 +293,6 @@ namespace p528_gui
             var result = new CResult();
             int rtn = 0;
             double d__km, d_out;
-
-            // convert inputs into metric units
-            var h1__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H1 : (singleCurveInputsCtrl.H1 * Constants.METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? singleCurveInputsCtrl.H2 : (singleCurveInputsCtrl.H2 * Constants.METER_PER_FOOT);
 
             // iterate on user-specified units (km or n miles)
             double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
@@ -292,7 +302,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528(d__km, h1__meter, h2__meter, singleCurveInputsCtrl.FMHZ, singleCurveInputsCtrl.TIME, ref result);
+                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
 
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
@@ -325,6 +335,7 @@ namespace p528_gui
                 }
 
                 fsPoints.Add(new Point(d_out, result.A_fs__db));
+                btgPoints.Add(new Point(d_out, result.A__db));
 
                 d += d_step;
             }
@@ -332,10 +343,7 @@ namespace p528_gui
             return rtn;
         }
 
-        private void Mi_Exit_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+        private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
 
         private void Mi_Export_Click(object sender, RoutedEventArgs e)
         {
@@ -458,27 +466,9 @@ namespace p528_gui
 
         private void Mi_FreeSpace_Click(object sender, RoutedEventArgs e)
         {
-            if (!mi_FreeSpace.IsChecked)
-                PlotData.RemoveAt(FS_SERIES);
-            else
-                AddFreeSpaceLineToPlot();
-        }
+            _showFreeSpaceLine = mi_FreeSpace.IsChecked;
 
-        private void AddFreeSpaceLineToPlot()
-        {
-            PlotData.Add(new LineSeries
-            {
-                Title = "Free Space",
-                PointGeometry = null,
-                StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
-                StrokeThickness = 1,
-                Values = new ChartValues<ObservablePoint>(),
-                Fill = new SolidColorBrush() { Opacity = 0 }
-            });
-
-            if (_pts_FS != null)
-                PlotData[FS_SERIES].Values.AddRange(_pts_FS);
+            Render();
         }
 
         private void Mi_Units_Meters_Click(object sender, RoutedEventArgs e)
@@ -508,15 +498,7 @@ namespace p528_gui
             customToolTip.Units = _units;
 
             // Clear plot data
-            if (mi_PlotMode_SingleCurve.IsChecked)
-            {
-                PlotData[LOS_SERIES].Values.Clear();
-                PlotData[DFRAC_SERIES].Values.Clear();
-                PlotData[SCAT_SERIES].Values.Clear();
-                PlotData[FS_SERIES].Values.Clear();
-            }
-            else
-                PlotData.Clear();
+            PlotData.Clear();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
@@ -544,13 +526,8 @@ namespace p528_gui
             ySeparator.Step = limitsWndw.YAxisStep;
         }
 
-        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e)
-        {
-            ResetPlot();
-
-            Btn_Render_Click(null, null);
-        }
-
+        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlot();
+        
         private void ResetPlot()
         {
             if (_units == Units.Meters)
@@ -563,42 +540,66 @@ namespace p528_gui
             yAxis.MaxValue = -100;
             yAxis.MinValue = -300;
             ySeparator.Step = 20;
+
+            Render?.Invoke();
         }
 
         private void Mi_PlotMode_SingleCurve_Click(object sender, RoutedEventArgs e)
         {
+            Render = RenderSingleCurve;
+
+            mi_Export.IsEnabled = true;
+
             mi_PlotMode_SingleCurve.IsChecked = true;
             mi_PlotMode_MultipleHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
-            ConfigurePlotForSingleCurve();
-            mi_SingleCurve_View.Visibility = Visibility.Visible;
+            PlotData.Clear();
+            mi_View.Visibility = Visibility.Visible;
+            mi_ModeOfProp.Visibility = Visibility.Visible;
         }
 
         private void Mi_PlotMode_MultipleHeights_Click(object sender, RoutedEventArgs e)
         {
+            Render = RenderMultipleHeights;
+
+            mi_Export.IsEnabled = false;
+
             mi_PlotMode_SingleCurve.IsChecked = false;
             mi_PlotMode_MultipleHeights.IsChecked = true;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleHeightsInputsControl() { Units = _units });
-            ConfigurePlotForMultipleHeightCurves();
-            mi_SingleCurve_View.Visibility = Visibility.Collapsed;
+            PlotData.Clear();
+            mi_View.Visibility = Visibility.Collapsed;
+            mi_ModeOfProp.Visibility = Visibility.Visible;
         }
 
         private void Mi_PlotMode_MultipleTimePercentages_Click(object sender, RoutedEventArgs e)
         {
+            Render = RenderMultipleTimes;
+
+            mi_Export.IsEnabled = false;
+
             mi_PlotMode_SingleCurve.IsChecked = false;
             mi_PlotMode_MultipleHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = true;
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
-            ConfigurePlotForMultipleTimeCurves();
-            mi_SingleCurve_View.Visibility = Visibility.Collapsed;
+            PlotData.Clear();
+            mi_View.Visibility = Visibility.Visible;
+            mi_ModeOfProp.Visibility = Visibility.Collapsed;
+        }
+
+        private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
+        {
+            _showModeOfProp = mi_ModeOfProp.IsChecked;
+
+            Render();
         }
     }
 }

@@ -22,8 +22,9 @@
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="View" Name="mi_SingleCurve_View" Visibility="Visible">
+            <MenuItem Header="View" Name="mi_View" Visibility="Visible">
                 <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
+                <MenuItem Header="Highlight Mode of Propagation" Name="mi_ModeOfProp" Click="Mi_ModeOfProp_Click" IsCheckable="True" IsChecked="True"/>
             </MenuItem>
             <MenuItem Header="Options">
                 <MenuItem Header="Units...">

@@ -1,4 +1,5 @@
-﻿using p528_gui.Windows;
+﻿using p528_gui.Interfaces;
+using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +17,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleTimeInputsControl : UserControl
+    public partial class MultipleTimeInputsControl : UserControl, IInputValidation
     {
         private Units _units;
         public Units Units

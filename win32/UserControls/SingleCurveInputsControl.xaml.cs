@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled
+    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, IInputValidation
     {
         private Units _units;
         public Units Units
@@ -50,7 +50,7 @@ namespace p528_gui.UserControls
         /// Validate user specified inputs
         /// </summary>
         /// <returns>Did input validation succeed?</returns>
-        internal bool AreInputsValid()
+        public bool AreInputsValid()
         {
             if (!Tools.ValidateH1(tb_h1.Text, _units, out double h1))
                 return Tools.ValidationError(tb_h1);
