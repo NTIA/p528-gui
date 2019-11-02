@@ -22,6 +22,15 @@ namespace p528_gui.Windows
 
         public bool IncludeModeOfPropagation { get; private set; }
 
+        public bool ShowMinimum
+        {
+            set
+            {
+                cb_FreeSpaceLoss.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+                cb_ModeOfPropagation.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+
         public ExportOptionsWindow()
         {
             InitializeComponent();

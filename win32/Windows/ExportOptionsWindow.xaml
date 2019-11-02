@@ -43,7 +43,7 @@
                     </Grid.RowDefinitions>
 
                     <CheckBox Grid.Row="0" Content="Distance" IsChecked="True" IsEnabled="False" Margin="3"/>
-                    <CheckBox Grid.Row="1" Content="Basic Transmission Loss" IsChecked="True" IsEnabled="False" Margin="3"/>
+                    <CheckBox Grid.Row="1" Content="Basic Transmission Gain" IsChecked="True" IsEnabled="False" Margin="3"/>
                     <CheckBox Grid.Row="2" Content="Free Space Loss" IsChecked="False" Margin="3" Name="cb_FreeSpaceLoss"/>
                     <CheckBox Grid.Row="3" Content="Mode of Propagation" IsChecked="False" Margin="3" Name="cb_ModeOfPropagation"/>
                 </Grid>

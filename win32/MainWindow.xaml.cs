@@ -392,25 +392,27 @@ namespace p528_gui
             if (sfd.ShowDialog() != true)
                 return;
 
+            bool result = false;
             if (mi_PlotMode_SingleCurve.IsChecked)
-                CsvExport_SingleCurve(sfd.FileName);
+                result = CsvExport_SingleCurve(sfd.FileName);
             if (mi_PlotMode_MultipleLowHeights.IsChecked)
-                CsvExport_MultipleLowTerminals(sfd.FileName);
+                result =CsvExport_MultipleLowTerminals(sfd.FileName);
             if (mi_PlotMode_MultipleHighHeights.IsChecked)
-                CsvExport_MultipleHighTerminals(sfd.FileName);
+                result = CsvExport_MultipleHighTerminals(sfd.FileName);
             if (mi_PlotMode_MultipleTimePercentages.IsChecked)
-                CsvExport_MultipleTimePercentages(sfd.FileName);
+                result = CsvExport_MultipleTimePercentages(sfd.FileName);
 
-            MessageBox.Show("Export Completed");
+            if (result)
+                MessageBox.Show("Export Completed");
         }
 
-        private void CsvExport_SingleCurve(string filepath)
+        private bool CsvExport_SingleCurve(string filepath)
         {
             var inputControl = grid_Controls.Children[0] as SingleCurveInputsControl;
 
-            var exportOptionsWndw = new ExportOptionsWindow();
+            var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = false };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return;
+                return false;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
@@ -511,15 +513,17 @@ namespace p528_gui
                     }
                 }
             }
+
+            return true;
         }
 
-        private void CsvExport_MultipleLowTerminals(string filepath)
+        private bool CsvExport_MultipleLowTerminals(string filepath)
         {
             var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
 
-            var exportOptionsWndw = new ExportOptionsWindow();
+            var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return;
+                return false;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
@@ -614,15 +618,17 @@ namespace p528_gui
                     }
                 }
             }
+
+            return true;
         }
 
-        private void CsvExport_MultipleHighTerminals(string filepath)
+        private bool CsvExport_MultipleHighTerminals(string filepath)
         {
             var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
 
-            var exportOptionsWndw = new ExportOptionsWindow();
+            var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return;
+                return false;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
@@ -717,15 +723,17 @@ namespace p528_gui
                     }
                 }
             }
+
+            return true;
         }
 
-        private void CsvExport_MultipleTimePercentages(string filepath)
+        private bool CsvExport_MultipleTimePercentages(string filepath)
         {
             var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
 
-            var exportOptionsWndw = new ExportOptionsWindow();
+            var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return;
+                return false;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
@@ -812,10 +820,11 @@ namespace p528_gui
                     }
                 }
             }
+
+            return true;
         }
 
         #endregion
-
 
         private void Mi_About_Click(object sender, RoutedEventArgs e)
         {
