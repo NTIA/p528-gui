@@ -29,6 +29,7 @@ namespace p528_gui.Windows
             tb_AppVersion.Text = $"{version.Major}.{version.Minor}.{version.Build}";
 
             var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            tb_DllVersionText.Text = $"P.528-{dll.FileMajorPart} DLL Version:";
             tb_DllVersion.Text = $"{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}";
 
             if (CheckForUpdate(out int major, out int minor) &&
