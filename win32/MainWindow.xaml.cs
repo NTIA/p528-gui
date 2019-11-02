@@ -391,7 +391,7 @@ namespace p528_gui
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
 
-                dists.Add(Math.Round(d_out, 3));
+                dists.Add(Math.Round(d_out, 0));
                 A__db.Add(Math.Round(result.A__db, 3));
                 A_fs__db.Add(Math.Round(result.A_fs__db, 3));
                 modes.Add(result.propagation_mode);
