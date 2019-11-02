@@ -70,7 +70,7 @@
                 <TextBlock Name="tb_FrequencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
             </StackPanel>
 
-            <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click"/>
+            <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click" TabIndex="8"/>
 
             <Grid Name="grid_Controls">
                 <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>

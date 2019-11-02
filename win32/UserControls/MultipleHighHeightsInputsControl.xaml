@@ -21,17 +21,17 @@
         </Grid.RowDefinitions>
 
         <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="0" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1" TabIndex="1"/>
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Frequency (MHz):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq" TabIndex="2"/>
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="2" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_time"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_time" TabIndex="3"/>
 
         <TextBlock Name="tb_t2" Grid.Row="0" Grid.Column="2" Text="Terminal 2 Heights (m):" Margin="3" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-        <ListBox Name="lb_h2s" Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" Margin="3" SelectionMode="Multiple" SelectionChanged="Lb_h2s_SelectionChanged"/>
+        <ListBox Name="lb_h2s" Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" Margin="3" SelectionMode="Multiple" SelectionChanged="Lb_h2s_SelectionChanged" TabIndex="5"/>
         <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="3">
-            <Button Content="Add" Margin="3" Padding="5,0" Name="btn_AddHeight" Click="Btn_AddHeight_Click"/>
-            <Button Content="Remove" Margin="3" Padding="5,0" IsEnabled="False" Name="btn_Remove" Click="Btn_Remove_Click"/>
+            <Button Content="Add" Margin="3" Padding="5,0" Name="btn_AddHeight" Click="Btn_AddHeight_Click" TabIndex="4"/>
+            <Button Content="Remove" Margin="3" Padding="5,0" IsEnabled="False" Name="btn_Remove" Click="Btn_Remove_Click" TabIndex="6"/>
         </StackPanel>
     </Grid>
 </UserControl>
