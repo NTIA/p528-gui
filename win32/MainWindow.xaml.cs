@@ -418,8 +418,8 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{h_1__meter}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{h_2__meter}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
