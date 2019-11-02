@@ -31,7 +31,7 @@
         </StackPanel>
         
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Distance:"/>
-        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=PointVM.DistanceKM}"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=PointVM.Distance}"/>
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Loss:"/>
         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=PointVM.LossDB}"/>
     </Grid>
