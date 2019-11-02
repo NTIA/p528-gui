@@ -54,7 +54,7 @@
                 </lvc:Axis>
             </lvc:CartesianChart.AxisX>
             <lvc:CartesianChart.AxisY>
-                <lvc:Axis Name="yAxis" Title="Loss (dB)" Foreground="Black" MaxValue="-100" MinValue="-300">
+                <lvc:Axis Name="yAxis" Title="Basic Transmission Gain (dB)" Foreground="Black" MaxValue="-100" MinValue="-300">
                     <lvc:Axis.Separator>
                         <lvc:Separator x:Name="ySeparator" Step="20"/>
                     </lvc:Axis.Separator>
