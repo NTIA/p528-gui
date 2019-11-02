@@ -165,7 +165,38 @@ namespace p528_gui
             }
         }
 
-        private void RenderMultipleHeights()
+        private void RenderMultipleLowHeights()
+        {
+            var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
+            if (!inputControl.AreInputsValid())
+                return;
+
+            PlotData.Clear();
+
+            // convert inputs into metric units
+            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+            List<double> h_1s__meter = new List<double>();
+            for (int i = 0; i < inputControl.H1s.Count; i++)
+            {
+                double h1 = inputControl.H1s[i];
+                double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
+
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
+
+                // Plot the data
+                PlotData.Add(new LineSeries
+                {
+                    Title = $"{h1} {_units.ToString()}",
+                    PointGeometry = null,
+                    Stroke = Tools.GetBrush(i),
+                    StrokeThickness = 5,
+                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
+                    Fill = new SolidColorBrush() { Opacity = 0 },
+                });
+            }
+        }
+
+        private void RenderMultipleHighHeights()
         {
             var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
             if (!inputControl.AreInputsValid())
@@ -555,6 +586,7 @@ namespace p528_gui
             mi_Export.IsEnabled = true;
 
             mi_PlotMode_SingleCurve.IsChecked = true;
+            mi_PlotMode_MultipleLowHeights.IsChecked = false;
             mi_PlotMode_MultipleHighHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
@@ -567,11 +599,12 @@ namespace p528_gui
 
         private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)
         {
-            Render = RenderMultipleHeights;
+            Render = RenderMultipleHighHeights;
 
             mi_Export.IsEnabled = false;
 
             mi_PlotMode_SingleCurve.IsChecked = false;
+            mi_PlotMode_MultipleLowHeights.IsChecked = false;
             mi_PlotMode_MultipleHighHeights.IsChecked = true;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
@@ -589,6 +622,7 @@ namespace p528_gui
             mi_Export.IsEnabled = false;
 
             mi_PlotMode_SingleCurve.IsChecked = false;
+            mi_PlotMode_MultipleLowHeights.IsChecked = false;
             mi_PlotMode_MultipleHighHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = true;
 
@@ -604,6 +638,19 @@ namespace p528_gui
             _showModeOfProp = mi_ModeOfProp.IsChecked;
 
             Render();
+        }
+
+        private void Mi_PlotMode_MultipleLowHeights_Click(object sender, RoutedEventArgs e)
+        {
+            Render = RenderMultipleLowHeights;
+
+            mi_Export.IsEnabled = false;
+
+            grid_Controls.Children.Clear();
+            grid_Controls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
+            PlotData.Clear();
+            mi_View.Visibility = Visibility.Collapsed;
+            mi_ModeOfProp.Visibility = Visibility.Visible;
         }
     }
 }
