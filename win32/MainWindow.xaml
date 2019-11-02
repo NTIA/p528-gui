@@ -37,7 +37,7 @@
                 </MenuItem>
                 <MenuItem Header="Plot Mode...">
                     <MenuItem Header="Single Curve" Name="mi_PlotMode_SingleCurve" IsChecked="True" Click="Mi_PlotMode_SingleCurve_Click"/>
-                    <MenuItem Header="Multiple Heights" Name="mi_PlotMode_MultipleHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHeights_Click"/>
+                    <MenuItem Header="Multiple High Terminal Heights" Name="mi_PlotMode_MultipleHighHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHighHeights_Click"/>
                     <MenuItem Header="Multiple Time Percentages" Name="mi_PlotMode_MultipleTimePercentages" IsChecked="False" Click="Mi_PlotMode_MultipleTimePercentages_Click"/>
                 </MenuItem>
             </MenuItem>

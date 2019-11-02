@@ -69,8 +69,8 @@
     <Compile Include="Interfaces\IInputValidation.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Tools.cs" />
-    <Compile Include="UserControls\MultipleHeightsInputsControl.xaml.cs">
-      <DependentUpon>MultipleHeightsInputsControl.xaml</DependentUpon>
+    <Compile Include="UserControls\MultipleHighHeightsInputsControl.xaml.cs">
+      <DependentUpon>MultipleHighHeightsInputsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserControls\MultipleTimeInputsControl.xaml.cs">
       <DependentUpon>MultipleTimeInputsControl.xaml</DependentUpon>
@@ -78,7 +78,7 @@
     <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
       <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
     </Compile>
-    <Page Include="UserControls\MultipleHeightsInputsControl.xaml">
+    <Page Include="UserControls\MultipleHighHeightsInputsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -90,7 +90,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Windows\AddHeightWindow.xaml">
+    <Page Include="Windows\AddHighHeightWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -121,8 +121,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Windows\AddHeightWindow.xaml.cs">
-      <DependentUpon>AddHeightWindow.xaml</DependentUpon>
+    <Compile Include="Windows\AddHighHeightWindow.xaml.cs">
+      <DependentUpon>AddHighHeightWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\AddTimeWindow.xaml.cs">
       <DependentUpon>AddTimeWindow.xaml</DependentUpon>

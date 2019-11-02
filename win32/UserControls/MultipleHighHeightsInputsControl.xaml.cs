@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleHeightsInputsControl : UserControl, IUnitEnabled, IInputValidation
+    public partial class MultipleHighHeightsInputsControl : UserControl, IUnitEnabled, IInputValidation
     {
         private Units _units;
         public Units Units
@@ -39,7 +39,7 @@ namespace p528_gui.UserControls
 
         public double TIME { get; set; }
 
-        public MultipleHeightsInputsControl()
+        public MultipleHighHeightsInputsControl()
         {
             InitializeComponent();
         }
@@ -98,7 +98,7 @@ namespace p528_gui.UserControls
 
         private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
         {
-            var wndw = new AddHeightWindow() { Units = _units };
+            var wndw = new AddHighHeightWindow() { Units = _units };
 
             if (!wndw.ShowDialog().Value)
                 return;

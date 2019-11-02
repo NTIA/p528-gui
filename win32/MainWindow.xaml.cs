@@ -167,7 +167,7 @@ namespace p528_gui
 
         private void RenderMultipleHeights()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleHeightsInputsControl;
+            var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
             if (!inputControl.AreInputsValid())
                 return;
 
@@ -555,7 +555,7 @@ namespace p528_gui
             mi_Export.IsEnabled = true;
 
             mi_PlotMode_SingleCurve.IsChecked = true;
-            mi_PlotMode_MultipleHeights.IsChecked = false;
+            mi_PlotMode_MultipleHighHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
@@ -565,18 +565,18 @@ namespace p528_gui
             mi_ModeOfProp.Visibility = Visibility.Visible;
         }
 
-        private void Mi_PlotMode_MultipleHeights_Click(object sender, RoutedEventArgs e)
+        private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)
         {
             Render = RenderMultipleHeights;
 
             mi_Export.IsEnabled = false;
 
             mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleHeights.IsChecked = true;
+            mi_PlotMode_MultipleHighHeights.IsChecked = true;
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleHeightsInputsControl() { Units = _units });
+            grid_Controls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
             PlotData.Clear();
             mi_View.Visibility = Visibility.Collapsed;
             mi_ModeOfProp.Visibility = Visibility.Visible;
@@ -589,7 +589,7 @@ namespace p528_gui
             mi_Export.IsEnabled = false;
 
             mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleHeights.IsChecked = false;
+            mi_PlotMode_MultipleHighHeights.IsChecked = false;
             mi_PlotMode_MultipleTimePercentages.IsChecked = true;
 
             grid_Controls.Children.Clear();
