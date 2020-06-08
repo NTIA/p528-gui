@@ -1,6 +1,6 @@
-# ITU-R Rec P.528 GUI #
+# Rec ITU-R P.528 GUI #
 
-This code repository contains a Graphical User Interface (GUI) frontend to the [U.S. Reference Implementation](https://github.com/NTIA/p528) of ITU-R Rec P.528.  It allows a user to set input parameters and generate a loss-versus-distance curve with modes of propagation (Line-of-Sight, Diffraction, and Troposcatter) identified.
+This code repository contains a Graphical User Interface (GUI) frontend to the [U.S. Reference Implementation](https://github.com/NTIA/p528) of Rec ITU-R P.528.  It allows a user to set input parameters and generate a loss-versus-distance curve with modes of propagation (Line-of-Sight, Diffraction, and Troposcatter) identified.
 
 ## Inputs ##
 
@@ -13,7 +13,7 @@ This code repository contains a Graphical User Interface (GUI) frontend to the [
 
 ## Outputs ##
 
-The image below illustrates p528-gui for input parameters corresponding to Figure 1-4a in ITU-R Rec P.528.  The data representing this figure can be exported to a CSV data file.
+The image below illustrates p528-gui for input parameters corresponding to Figure 1-4a in Rec ITU-R P.528.  The data representing this figure can be exported to a CSV data file.
  
 ![Screenshot of P.528 GUI Tool](P528-Fig1-4a.png "Screenshot of P.528 GUI Tool")
 
@@ -27,8 +27,8 @@ To aquire a pre-built executable of this tool, navigate to the [Releases](https:
 
 ## References ##
 
- * [ITU-R Recommendation P.528](https://www.itu.int/rec/R-REC-P.528/en)
- * [U.S. Reference Implementation of Recommendation P.528](https://github.com/NTIA/p528)
+ * [Recommendation ITU-R P.528](https://www.itu.int/rec/R-REC-P.528/en)
+ * [U.S. Reference Implementation of Recommendation ITU-R P.528](https://github.com/NTIA/p528)
  
 ## Contact ##
 
