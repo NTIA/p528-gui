@@ -28,6 +28,16 @@ using p528_gui.Converters;
 
 namespace p528_gui
 {
+    #region Common Enums
+
+    enum PlotMode
+    {
+        Single,
+        MultipleLowTerminals,
+        MultipleHighTerminals,
+        MultipleTimes
+    }
+
     public enum Units
     {
         Meters,
@@ -40,6 +50,8 @@ namespace p528_gui
         MultipleHeights,
         MultipleTimes
     }
+
+    #endregion
 
     public partial class MainWindow : Window
     {
@@ -103,7 +115,7 @@ namespace p528_gui
 
         private void RenderSingleCurve()
         {
-            var inputConrol = grid_Controls.Children[0] as SingleCurveInputsControl;
+            var inputConrol = grid_InputControls.Children[0] as SingleCurveInputsControl;
 
             mi_Export.IsEnabled = true;
 
@@ -202,7 +214,7 @@ namespace p528_gui
 
         private void RenderMultipleLowHeights()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
             if (!inputControl.AreInputsValid())
                 return;
 
@@ -242,7 +254,7 @@ namespace p528_gui
 
         private void RenderMultipleHighHeights()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
             if (!inputControl.AreInputsValid())
                 return;
 
@@ -282,7 +294,7 @@ namespace p528_gui
 
         private void RenderMultipleTimes()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
             if (!inputControl.AreInputsValid())
                 return;
 
@@ -443,29 +455,29 @@ namespace p528_gui
 
         private void Mi_Export_Click(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog sfd = new SaveFileDialog();
-            sfd.Filter = "CSV file (*.csv)|*.csv";
+            //SaveFileDialog sfd = new SaveFileDialog();
+            //sfd.Filter = "CSV file (*.csv)|*.csv";
 
-            if (sfd.ShowDialog() != true)
-                return;
+            //if (sfd.ShowDialog() != true)
+            //    return;
 
-            bool result = false;
-            if (mi_PlotMode_SingleCurve.IsChecked)
-                result = CsvExport_SingleCurve(sfd.FileName);
-            if (mi_PlotMode_MultipleLowHeights.IsChecked)
-                result =CsvExport_MultipleLowTerminals(sfd.FileName);
-            if (mi_PlotMode_MultipleHighHeights.IsChecked)
-                result = CsvExport_MultipleHighTerminals(sfd.FileName);
-            if (mi_PlotMode_MultipleTimePercentages.IsChecked)
-                result = CsvExport_MultipleTimePercentages(sfd.FileName);
+            //bool result = false;
+            //if (mi_PlotMode_SingleCurve.IsChecked)
+            //    result = CsvExport_SingleCurve(sfd.FileName);
+            //if (mi_PlotMode_MultipleLowHeights.IsChecked)
+            //    result =CsvExport_MultipleLowTerminals(sfd.FileName);
+            //if (mi_PlotMode_MultipleHighHeights.IsChecked)
+            //    result = CsvExport_MultipleHighTerminals(sfd.FileName);
+            //if (mi_PlotMode_MultipleTimePercentages.IsChecked)
+            //    result = CsvExport_MultipleTimePercentages(sfd.FileName);
 
-            if (result)
-                MessageBox.Show("Export Completed");
+            //if (result)
+            //    MessageBox.Show("Export Completed");
         }
 
         private bool CsvExport_SingleCurve(string filepath)
         {
-            var inputControl = grid_Controls.Children[0] as SingleCurveInputsControl;
+            var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = false };
             if (!exportOptionsWndw.ShowDialog().Value)
@@ -575,7 +587,7 @@ namespace p528_gui
 
         private bool CsvExport_MultipleLowTerminals(string filepath)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
@@ -679,7 +691,7 @@ namespace p528_gui
 
         private bool CsvExport_MultipleHighTerminals(string filepath)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
@@ -783,7 +795,7 @@ namespace p528_gui
 
         private bool CsvExport_MultipleTimePercentages(string filepath)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
@@ -912,15 +924,15 @@ namespace p528_gui
 
         private void SetUnits()
         {
-            // Update text
-            (grid_Controls.Children[0] as IUnitEnabled).Units = _units;
-            _xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
-            ResetPlot();
-            //customToolTip.Units = _units;
+            //// Update text
+            //(grid_Controls.Children[0] as IUnitEnabled).Units = _units;
+            //_xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
+            //ResetPlot();
+            ////customToolTip.Units = _units;
 
-            // Clear plot data
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
+            //// Clear plot data
+            //PlotModel.Series.Clear();
+            //plot.InvalidatePlot();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
@@ -966,42 +978,12 @@ namespace p528_gui
             Render?.Invoke();
         }
 
-        private void Mi_PlotMode_SingleCurve_Click(object sender, RoutedEventArgs e)
-        {
-            Render = RenderSingleCurve;
-
-            mi_PlotMode_SingleCurve.IsChecked = true;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
-
-            grid_Controls.Children.Clear();
-            var singleCurveCtrl = new SingleCurveInputsControl() { Units = _units };
-            grid_Controls.Children.Add(singleCurveCtrl);
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-            mi_View.Visibility = Visibility.Visible;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
-
-            Binding binding = new Binding("ErrorCnt");
-            binding.Source = singleCurveCtrl;
-            binding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            binding.Converter = new IntegerToBooleanConverter();
-
-            BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding);
-        }
-
         private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)
         {
             Render = RenderMultipleHighHeights;
 
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = true;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
-
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
+            grid_InputControls.Children.Clear();
+            grid_InputControls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Collapsed;
@@ -1012,13 +994,8 @@ namespace p528_gui
         {
             Render = RenderMultipleTimes;
 
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = true;
-
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
+            grid_InputControls.Children.Clear();
+            grid_InputControls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Visible;
@@ -1036,17 +1013,72 @@ namespace p528_gui
         {
             Render = RenderMultipleLowHeights;
 
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = true;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
-
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
+            grid_InputControls.Children.Clear();
+            grid_InputControls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Collapsed;
             mi_ModeOfProp.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Controls the application mode with respect to the type of plot generated
+        /// </summary>
+        void Command_PlotMode(object sender, ExecutedRoutedEventArgs e)
+        {
+            // grab the command parameter
+            var plotMode = (PlotMode)e.Parameter;
+
+            // set the appropriate menu check
+            foreach (MenuItem mi in mi_Mode.Items)
+                mi.IsChecked = (PlotMode)mi.CommandParameter == plotMode;
+
+            // clear the input control area
+            grid_InputControls.Children.Clear();
+
+            // set the application with the correct UI elements and configuration
+            switch (plotMode)
+            {
+                case PlotMode.Single:
+                    Render = RenderSingleCurve;
+
+                    grid_InputControls.Children.Clear();
+                    var singleCurveCtrl = new SingleCurveInputsControl() { Units = _units };
+                    grid_InputControls.Children.Add(singleCurveCtrl);
+                    PlotModel.Series.Clear();
+                    plot.InvalidatePlot();
+                    mi_View.Visibility = Visibility.Visible;
+                    mi_ModeOfProp.Visibility = Visibility.Visible;
+
+                    Binding binding1 = new Binding("ErrorCnt");
+                    binding1.Source = singleCurveCtrl;
+                    binding1.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+                    binding1.Converter = new IntegerToBooleanConverter();
+
+                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding1);
+                    break;
+
+                case PlotMode.MultipleLowTerminals:
+                    break;
+
+                case PlotMode.MultipleHighTerminals:
+                    break;
+
+                case PlotMode.MultipleTimes:
+                    break;
+            }
+
+            // force update the view
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
+            //ActivePlot = false;
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // initialized application for Single Curve Mode
+            var command = PlotModeCommand.Command;
+            command.Execute(PlotMode.Single);
         }
     }
 }

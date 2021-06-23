@@ -8,7 +8,15 @@
         xmlns:controls="clr-namespace:p528_gui.UserControls"
         mc:Ignorable="d"
         Title="ITS ITU-R Rec P.528-4 GUI" Height="600" Width="800"
-        Icon="img\favicon.ico">
+        Icon="img\favicon.ico"
+        Loaded="Window_Loaded">
+    <Window.Resources>
+        <RoutedCommand x:Key="PlotModeCommand"/>
+    </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource PlotModeCommand}" Executed="Command_PlotMode" x:Name="PlotModeCommand"/>
+    </Window.CommandBindings>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -35,11 +43,20 @@
                     <MenuItem Header="Set Axis Limits" Name="mi_SetAxisLimits" Click="Mi_SetAxisLimits_Click"/>
                     <MenuItem Header="Reset to Defaults" Name="mi_ResetAxisLimits" Click="Mi_ResetAxisLimits_Click"/>
                 </MenuItem>
-                <MenuItem Header="Plot Mode...">
-                    <MenuItem Header="Single Curve" Name="mi_PlotMode_SingleCurve" IsChecked="True" Click="Mi_PlotMode_SingleCurve_Click"/>
-                    <MenuItem Header="Multiple Low Terminal Heights" Name="mi_PlotMode_MultipleLowHeights" IsChecked="False" Click="Mi_PlotMode_MultipleLowHeights_Click"/>
-                    <MenuItem Header="Multiple High Terminal Heights" Name="mi_PlotMode_MultipleHighHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHighHeights_Click"/>
-                    <MenuItem Header="Multiple Time Percentages" Name="mi_PlotMode_MultipleTimePercentages" IsChecked="False" Click="Mi_PlotMode_MultipleTimePercentages_Click"/>
+                <MenuItem Header="Plot Mode..." Name="mi_Mode">
+                    <MenuItem Header="Single Curve" 
+                              IsChecked="True"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.Single}"/>
+                    <MenuItem Header="Multiple Low Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleLowTerminals}"/>
+                    <MenuItem Header="Multiple High Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleHighTerminals}"/>
+                    <MenuItem Header="Multiple Time Percentages"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleTimes}"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
@@ -74,9 +91,7 @@
 
             <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click" TabIndex="8"/>
 
-            <Grid Name="grid_Controls">
-                <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>
-            </Grid>
+            <Grid Name="grid_InputControls"/>
         </DockPanel>
     </Grid>
 </Window>
