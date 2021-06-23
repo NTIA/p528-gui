@@ -24,6 +24,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ITS.Propagation;
+using p528_gui.Converters;
 
 namespace p528_gui
 {
@@ -103,16 +104,14 @@ namespace p528_gui
         private void RenderSingleCurve()
         {
             var inputConrol = grid_Controls.Children[0] as SingleCurveInputsControl;
-            if (!inputConrol.AreInputsValid())
-                return;
 
             mi_Export.IsEnabled = true;
 
             // convert inputs into metric units
-            var h1__meter = (_units == Units.Meters) ? inputConrol.H1 : (inputConrol.H1 * Constants.METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? inputConrol.H2 : (inputConrol.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputConrol.FMHZ;
-            double time = inputConrol.TIME;
+            var h1__meter = (_units == Units.Meters) ? inputConrol.h_1 : (inputConrol.h_1 * Constants.METER_PER_FOOT);
+            var h2__meter = (_units == Units.Meters) ? inputConrol.h_2 : (inputConrol.h_2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputConrol.f__mhz;
+            double time = inputConrol.time;
 
             int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, out List<Point>btgPoints, 
                 out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
@@ -357,7 +356,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, time, out P528.Result result);
+                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
@@ -397,7 +396,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, time, out P528.Result result);
+                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
@@ -483,10 +482,10 @@ namespace p528_gui
             int warnings = 0;
             double d__km, d_out;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.f__mhz;
+            double time = inputControl.time;
 
             double d = _xAxis.Minimum;
             while (d <= _xAxis.Maximum)
@@ -494,7 +493,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, time, out P528.Result result);
+                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -530,8 +529,8 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
@@ -607,7 +606,7 @@ namespace p528_gui
                 {
                     double h_1__meter = (_units == Units.Meters) ? inputControl.H1s[i] : (inputControl.H1s[i] * Constants.METER_PER_FOOT);
 
-                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, time, out P528.Result result);
+                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                     if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -711,7 +710,7 @@ namespace p528_gui
                 {
                     double h_2__meter = (_units == Units.Meters) ? inputControl.H2s[i] : (inputControl.H2s[i] * Constants.METER_PER_FOOT);
 
-                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, time, out P528.Result result);
+                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                     if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -813,7 +812,7 @@ namespace p528_gui
 
                 for (int i = 0; i < inputControl.TIMEs.Count; i++)
                 {
-                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, 0, inputControl.TIMEs[i], out P528.Result result);
+                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, inputControl.TIMEs[i], out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                     if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -977,11 +976,19 @@ namespace p528_gui
             mi_PlotMode_MultipleTimePercentages.IsChecked = false;
 
             grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
+            var singleCurveCtrl = new SingleCurveInputsControl() { Units = _units };
+            grid_Controls.Children.Add(singleCurveCtrl);
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Visible;
             mi_ModeOfProp.Visibility = Visibility.Visible;
+
+            Binding binding = new Binding("ErrorCnt");
+            binding.Source = singleCurveCtrl;
+            binding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            binding.Converter = new IntegerToBooleanConverter();
+
+            BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding);
         }
 
         private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)

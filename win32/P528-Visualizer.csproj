@@ -72,6 +72,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
+    <Compile Include="Converters\DoubleToStringConverter.cs" />
+    <Compile Include="Converters\IntegerToBooleanConverter.cs" />
     <Compile Include="Interfaces\IUnitEnabled.cs" />
     <Compile Include="Interfaces\IInputValidation.cs" />
     <Compile Include="Messages.cs" />
@@ -128,6 +130,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="ValidationRules\DoubleValidation.cs" />
+    <Compile Include="ValidationRules\FrequencyValidation.cs" />
+    <Compile Include="ValidationRules\TerminalHeightValidation.cs" />
+    <Compile Include="ValidationRules\TimeValidation.cs" />
     <Compile Include="Windows\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>

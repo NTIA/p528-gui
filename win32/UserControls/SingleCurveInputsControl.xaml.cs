@@ -1,7 +1,9 @@
 ﻿using p528_gui.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,7 +18,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, IInputValidation
+    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, INotifyPropertyChanged
     {
         private Units _units;
         public Units Units
@@ -30,13 +32,38 @@ namespace p528_gui.UserControls
             }
         }
 
-        public double H1 { get; private set; }
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
 
-        public double H2 { get; private set; }
+        /// <summary>
+        /// High terminal height, in user defined units
+        /// </summary>
+        public double h_2 { get; set; }
 
-        public double FMHZ { get; set; }
+        /// <summary>
+        /// Frequency, in MHz
+        /// </summary>
+        public double f__mhz { get; set; }
 
-        public double TIME { get; set; }
+        /// <summary>
+        /// Time percentage
+        /// </summary>
+        public double time { get; set; }
+
+        private int _errorCnt = 0;
+        public int ErrorCnt
+        {
+            get { return _errorCnt; }
+            set
+            {
+                _errorCnt = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public SingleCurveInputsControl()
         {
@@ -44,63 +71,19 @@ namespace p528_gui.UserControls
 
             img_t1.ToolTip = Messages.TerminalHeightWarning;
             img_t2.ToolTip = Messages.TerminalHeightWarning;
+
+            DataContext = this;
         }
 
-        /// <summary>
-        /// Validate user specified inputs
-        /// </summary>
-        /// <returns>Did input validation succeed?</returns>
-        public bool AreInputsValid()
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
         {
-            if (!Tools.ValidateH1(tb_h1.Text, _units, out double h1))
-                return Tools.ValidationError(tb_h1);
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
             else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h1;
-
-                img_t1.Visibility = (Tools.ConvertSpecifiedUnitsToKm(H1, _units) <= Constants.TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (!Tools.ValidateH2(tb_h2.Text, _units, out double h2))
-                return Tools.ValidationError(tb_h2);
-            else
-            {
-                Tools.ValidationSuccess(tb_h2);
-                H2 = h2;
-
-                img_t2.Visibility = (Tools.ConvertSpecifiedUnitsToKm(H2, _units) <= Constants.TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (h1 > h2)
-            {
-                Tools.ValidationError(tb_h1);
-                Tools.ValidationError(tb_h2);
-                MessageBox.Show(Messages.Terminal1LessThan2Error);
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                Tools.ValidationSuccess(tb_h2);
-            }
-
-            if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
-                return Tools.ValidationError(tb_freq);
-            else
-            {
-                Tools.ValidationSuccess(tb_freq);
-                FMHZ = f__mhz;
-            }
-
-            if (!Tools.ValidateTIME(tb_time.Text, out double time))
-                return Tools.ValidationError(tb_time);
-            else
-            {
-                Tools.ValidationSuccess(tb_time);
-                TIME = time;
-            }
-
-            return true;
+                ErrorCnt--;
         }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => 
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
