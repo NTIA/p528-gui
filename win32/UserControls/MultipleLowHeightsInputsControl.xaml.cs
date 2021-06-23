@@ -90,7 +90,7 @@ namespace p528_gui.UserControls
             else
             {
                 Tools.ValidationSuccess(tb_time);
-                TIME = time / 100;
+                TIME = time;
             }
 
             return true;
