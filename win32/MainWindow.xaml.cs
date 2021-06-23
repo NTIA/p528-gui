@@ -978,47 +978,11 @@ namespace p528_gui
             Render?.Invoke();
         }
 
-        private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)
-        {
-            Render = RenderMultipleHighHeights;
-
-            grid_InputControls.Children.Clear();
-            grid_InputControls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-            mi_View.Visibility = Visibility.Collapsed;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
-        }
-
-        private void Mi_PlotMode_MultipleTimePercentages_Click(object sender, RoutedEventArgs e)
-        {
-            Render = RenderMultipleTimes;
-
-            grid_InputControls.Children.Clear();
-            grid_InputControls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-            mi_View.Visibility = Visibility.Visible;
-            mi_ModeOfProp.Visibility = Visibility.Collapsed;
-        }
-
         private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
         {
             _showModeOfProp = mi_ModeOfProp.IsChecked;
 
             Render();
-        }
-
-        private void Mi_PlotMode_MultipleLowHeights_Click(object sender, RoutedEventArgs e)
-        {
-            Render = RenderMultipleLowHeights;
-
-            grid_InputControls.Children.Clear();
-            grid_InputControls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-            mi_View.Visibility = Visibility.Collapsed;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -1033,8 +997,10 @@ namespace p528_gui
             foreach (MenuItem mi in mi_Mode.Items)
                 mi.IsChecked = (PlotMode)mi.CommandParameter == plotMode;
 
-            // clear the input control area
+            // reset the UI
             grid_InputControls.Children.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
 
             // set the application with the correct UI elements and configuration
             switch (plotMode)
@@ -1042,11 +1008,9 @@ namespace p528_gui
                 case PlotMode.Single:
                     Render = RenderSingleCurve;
 
-                    grid_InputControls.Children.Clear();
                     var singleCurveCtrl = new SingleCurveInputsControl() { Units = _units };
                     grid_InputControls.Children.Add(singleCurveCtrl);
-                    PlotModel.Series.Clear();
-                    plot.InvalidatePlot();
+                    
                     mi_View.Visibility = Visibility.Visible;
                     mi_ModeOfProp.Visibility = Visibility.Visible;
 
@@ -1059,12 +1023,54 @@ namespace p528_gui
                     break;
 
                 case PlotMode.MultipleLowTerminals:
+                    Render = RenderMultipleLowHeights;
+
+                    var multipleLowCtrl = new MultipleLowHeightsInputsControl() { Units = _units };
+                    grid_InputControls.Children.Add(multipleLowCtrl);
+
+                    mi_View.Visibility = Visibility.Collapsed;
+                    mi_ModeOfProp.Visibility = Visibility.Visible;
+
+                    Binding binding2 = new Binding("ErrorCnt");
+                    binding2.Source = multipleLowCtrl;
+                    binding2.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+                    binding2.Converter = new IntegerToBooleanConverter();
+
+                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding2);
                     break;
 
                 case PlotMode.MultipleHighTerminals:
+                    Render = RenderMultipleHighHeights;
+
+                    var multipleHighCtrl = new MultipleHighHeightsInputsControl() { Units = _units };
+                    grid_InputControls.Children.Add(multipleHighCtrl);
+
+                    mi_View.Visibility = Visibility.Collapsed;
+                    mi_ModeOfProp.Visibility = Visibility.Visible;
+
+                    Binding binding3 = new Binding("ErrorCnt");
+                    binding3.Source = multipleHighCtrl;
+                    binding3.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+                    binding3.Converter = new IntegerToBooleanConverter();
+
+                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding3);
                     break;
 
                 case PlotMode.MultipleTimes:
+                    Render = RenderMultipleTimes;
+
+                    var multipleTimesCtrl = new MultipleTimeInputsControl() { Units = _units };
+                    grid_InputControls.Children.Add(multipleTimesCtrl);
+
+                    mi_View.Visibility = Visibility.Visible;
+                    mi_ModeOfProp.Visibility = Visibility.Collapsed;
+
+                    Binding binding4 = new Binding("ErrorCnt");
+                    binding4.Source = multipleTimesCtrl;
+                    binding4.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+                    binding4.Converter = new IntegerToBooleanConverter();
+
+                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding4);
                     break;
             }
 
