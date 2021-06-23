@@ -77,9 +77,11 @@ namespace p528_gui
             _xAxis.Position = AxisPosition.Bottom;
 
             _yAxis = new LinearAxis();
-            _yAxis.Title = "Basic Transmission Gain (dB)";
+            _yAxis.Title = "Basic Transmission Loss (dB)";
             _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
             _yAxis.Position = AxisPosition.Left;
+            _yAxis.StartPosition = 1;
+            _yAxis.EndPosition = 0;
 
             PlotModel.Axes.Add(_xAxis);
             PlotModel.Axes.Add(_yAxis);
@@ -958,8 +960,8 @@ namespace p528_gui
 
             _xAxis.Minimum = 0;
             //xSeparator.Step = 200;
-            _yAxis.Maximum = -100;
-            _yAxis.Minimum = -300;
+            _yAxis.Maximum = 300;
+            _yAxis.Minimum = 100;
             //ySeparator.Step = 20;
 
             Render?.Invoke();
