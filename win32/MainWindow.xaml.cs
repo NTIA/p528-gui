@@ -1,6 +1,6 @@
-﻿using LiveCharts;
-using LiveCharts.Defaults;
-using LiveCharts.Wpf;
+﻿using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 using Microsoft.Win32;
 using p528_gui.Interfaces;
 using p528_gui.UserControls;
@@ -52,7 +52,7 @@ namespace p528_gui
         private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
         private const int WARNING__LOW_FREQUENCY = 0xFF2;
 
-        public SeriesCollection PlotData { get; set; } = new SeriesCollection();
+        public PlotModel PlotModel { get; set; }
 
         private const int LOS_SERIES = 0;
         private const int DFRAC_SERIES = 1;
@@ -66,9 +66,29 @@ namespace p528_gui
         private delegate void RenderPlot();
         private RenderPlot Render;
 
+        readonly LogarithmicAxis _xAxis;
+        readonly LinearAxis _yAxis;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            PlotModel = new PlotModel() { Title = "" };
+
+            _xAxis = new LogarithmicAxis();
+            _xAxis.Title = "Distance (km)";
+            _xAxis.Minimum = 0;
+            _xAxis.Maximum = 1800;
+            _xAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _xAxis.Position = AxisPosition.Bottom;
+
+            _yAxis = new LinearAxis();
+            _yAxis.Title = "Basic Transmission Gain (dB)";
+            _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _yAxis.Position = AxisPosition.Left;
+
+            PlotModel.Axes.Add(_xAxis);
+            PlotModel.Axes.Add(_yAxis);
 
             DataContext = this;
 
@@ -81,6 +101,8 @@ namespace p528_gui
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
+
+        OxyColor ConvertBrushToOxyColor(Brush brush) => OxyColor.Parse(((SolidColorBrush)brush).Color.ToString());
 
         private void RenderSingleCurve()
         {
@@ -104,65 +126,83 @@ namespace p528_gui
             tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
 
             // Plot the data
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+
             if (_showModeOfProp)
             {
-                PlotData.Add(new LineSeries
+                var losSeries = new LineSeries()
                 {
+                    StrokeThickness = 5,
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
                     Title = "Line of Sight",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(losPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                losSeries.Points.AddRange(losPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(losSeries);
 
-                PlotData.Add(new LineSeries
+                var dfracSeries = new LineSeries()
                 {
+                    StrokeThickness = 5,
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2")),
                     Title = "Diffraction",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(dfracPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                dfracSeries.Points.AddRange(dfracPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(dfracSeries);
 
-                PlotData.Add(new LineSeries
+                var scatSeries = new LineSeries()
                 {
-                    Title = "Troposcatter",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00"),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(scatPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00")),
+                    Title = "Diffraction",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                scatSeries.Points.AddRange(scatPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(scatSeries);
             }
             else
             {
-                PlotData.Add(new LineSeries
+                var series = new LineSeries()
                 {
-                    Title = "Basic Transmission Gain",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(btgPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
+                    Title = "Basic Transmission Gain",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                series.Points.AddRange(btgPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(series);
             }
 
             if (_showFreeSpaceLine)
             {
-                PlotData.Add(new LineSeries
+                // TODO: make dotted line
+                var fsSeries = new LineSeries()
                 {
-                    Title = "Free Space",
-                    PointGeometry = null,
-                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
                     StrokeThickness = 1,
-                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+                    Title = "Free Space",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(fsSeries);
             }
+
+            plot.InvalidatePlot();
         }
 
         private void RenderMultipleLowHeights()
@@ -175,7 +215,7 @@ namespace p528_gui
 
             tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
 
-            PlotData.Clear();
+            PlotModel.Series.Clear();
 
             // convert inputs into metric units
             double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
@@ -188,16 +228,21 @@ namespace p528_gui
                 int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
 
                 // Plot the data
-                PlotData.Add(new LineSeries
+                var series = new LineSeries()
                 {
-                    Title = $"{h1} {_units.ToString()}",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
+                    Title = $"{h1} {_units.ToString()}",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(series);
             }
+
+            plot.InvalidatePlot();
         }
 
         private void RenderMultipleHighHeights()
@@ -210,7 +255,7 @@ namespace p528_gui
 
             tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
 
-            PlotData.Clear();
+            PlotModel.Series.Clear();
 
             // convert inputs into metric units
             double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
@@ -223,16 +268,21 @@ namespace p528_gui
                 int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
 
                 // Plot the data
-                PlotData.Add(new LineSeries
+                var series = new LineSeries()
                 {
-                    Title = $"{h2} {_units.ToString()}",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
+                    Title = $"{h2} {_units.ToString()}",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(series);
             }
+
+            plot.InvalidatePlot();
         }
 
         private void RenderMultipleTimes()
@@ -245,7 +295,7 @@ namespace p528_gui
 
             tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
 
-            PlotData.Clear();
+            PlotModel.Series.Clear();
 
             double f__mhz = inputControl.FMHZ;
             double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
@@ -259,15 +309,18 @@ namespace p528_gui
                 int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, out List<Point> pts);
 
                 // Plot the data
-                PlotData.Add(new LineSeries
+                var series = new LineSeries()
                 {
-                    Title = $"{time * 100}%",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
                     StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
+                    Title = $"{time * 100}%",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(series);
             }
 
             if (_showFreeSpaceLine)
@@ -275,17 +328,22 @@ namespace p528_gui
                 GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, out List<Point> btgPoints, 
                     out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
-                PlotData.Add(new LineSeries
+                // TODO: make dotted line
+                var fsSeries = new LineSeries()
                 {
-                    Title = "Free Space",
-                    PointGeometry = null,
-                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
                     StrokeThickness = 1,
-                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+                    Title = "Free Space",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+                fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
+                PlotModel.Series.Add(fsSeries);
             }
+
+            plot.InvalidatePlot();
         }
 
         private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> lossPoints)
@@ -296,10 +354,10 @@ namespace p528_gui
             int rtn = 0;
 
             // iterate on user-specified units (km or n miles)
-            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
-            double d = xAxis.MinValue;
+            double d_step = (_xAxis.Maximum - _xAxis.Minimum) / 1500;
+            double d = _xAxis.Minimum;
             double d__km, d_out;
-            while (d <= xAxis.MaxValue)
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -338,9 +396,9 @@ namespace p528_gui
             double d__km, d_out;
 
             // iterate on user-specified units (km or n miles)
-            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
+            double d_step = (_xAxis.Maximum - _xAxis.Minimum) / 1500;
+            double d = _xAxis.Minimum;
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -437,8 +495,8 @@ namespace p528_gui
             double time = inputControl.TIME;
 
             var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
+            double d = _xAxis.Minimum;
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -547,8 +605,8 @@ namespace p528_gui
             double time = inputControl.TIME;
 
             var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
+            double d = _xAxis.Minimum;
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -652,8 +710,8 @@ namespace p528_gui
             double time = inputControl.TIME;
 
             var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
+            double d = _xAxis.Minimum;
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -757,8 +815,8 @@ namespace p528_gui
             double f__mhz = inputControl.FMHZ;
 
             var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
+            double d = _xAxis.Minimum;
+            while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
@@ -867,12 +925,13 @@ namespace p528_gui
         {
             // Update text
             (grid_Controls.Children[0] as IUnitEnabled).Units = _units;
-            xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
+            _xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
             ResetPlot();
-            customToolTip.Units = _units;
+            //customToolTip.Units = _units;
 
             // Clear plot data
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
@@ -880,24 +939,24 @@ namespace p528_gui
             var limitsWndw = new AxisLimitsWindow()
             {
                 XAxisUnit = (_units == Units.Meters) ? "km" : "n mile",
-                XAxisMaximum = xAxis.MaxValue,
-                XAxisMinimum = xAxis.MinValue,
-                XAxisStep = xSeparator.Step,
-                YAxisMaximum = yAxis.MaxValue,
-                YAxisMinimum = yAxis.MinValue,
-                YAxisStep = ySeparator.Step
+                XAxisMaximum = _xAxis.Maximum,
+                XAxisMinimum = _xAxis.Minimum,
+                //XAxisStep = xSeparator.Step,
+                YAxisMaximum = _yAxis.Maximum,
+                YAxisMinimum = _yAxis.Minimum,
+                //YAxisStep = ySeparator.Step
             };
 
             if (!limitsWndw.ShowDialog().Value)
                 return;
 
-            xAxis.MaxValue = limitsWndw.XAxisMaximum;
-            xAxis.MinValue = limitsWndw.XAxisMinimum;
-            xSeparator.Step = limitsWndw.XAxisStep;
+            _xAxis.Maximum = limitsWndw.XAxisMaximum;
+            _xAxis.Minimum = limitsWndw.XAxisMinimum;
+            //xSeparator.Step = limitsWndw.XAxisStep;
 
-            yAxis.MaxValue = limitsWndw.YAxisMaximum;
-            yAxis.MinValue = limitsWndw.YAxisMinimum;
-            ySeparator.Step = limitsWndw.YAxisStep;
+            _yAxis.Maximum = limitsWndw.YAxisMaximum;
+            _yAxis.Minimum = limitsWndw.YAxisMinimum;
+            //ySeparator.Step = limitsWndw.YAxisStep;
         }
 
         private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlot();
@@ -905,15 +964,15 @@ namespace p528_gui
         private void ResetPlot()
         {
             if (_units == Units.Meters)
-                xAxis.MaxValue = 1800;
+                _xAxis.Maximum = 1800;
             else
-                xAxis.MaxValue = 970;
+                _xAxis.Maximum = 970;
 
-            xAxis.MinValue = 0;
-            xSeparator.Step = 200;
-            yAxis.MaxValue = -100;
-            yAxis.MinValue = -300;
-            ySeparator.Step = 20;
+            _xAxis.Minimum = 0;
+            //xSeparator.Step = 200;
+            _yAxis.Maximum = -100;
+            _yAxis.Minimum = -300;
+            //ySeparator.Step = 20;
 
             Render?.Invoke();
         }
@@ -929,7 +988,8 @@ namespace p528_gui
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Visible;
             mi_ModeOfProp.Visibility = Visibility.Visible;
         }
@@ -945,7 +1005,8 @@ namespace p528_gui
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Collapsed;
             mi_ModeOfProp.Visibility = Visibility.Visible;
         }
@@ -961,7 +1022,8 @@ namespace p528_gui
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Visible;
             mi_ModeOfProp.Visibility = Visibility.Collapsed;
         }
@@ -984,7 +1046,8 @@ namespace p528_gui
 
             grid_Controls.Children.Clear();
             grid_Controls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
-            PlotData.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
             mi_View.Visibility = Visibility.Collapsed;
             mi_ModeOfProp.Visibility = Visibility.Visible;
         }

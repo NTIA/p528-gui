@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:local="clr-namespace:p528_gui"
         xmlns:controls="clr-namespace:p528_gui.UserControls"
         mc:Ignorable="d"
@@ -45,7 +45,8 @@
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
 
-        <lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True" Margin="3">
+        <oxy:PlotView Grid.Row="1" Name="plot" Model="{Binding PlotModel}" Margin="3,3,20,3"/>
+        <!--<lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True" Margin="3">
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
                     <lvc:Axis.Separator>
@@ -63,7 +64,7 @@
             <lvc:CartesianChart.DataTooltip>
                 <local:CustomToolTip x:Name="customToolTip" SelectionMode="OnlySender"/>
             </lvc:CartesianChart.DataTooltip>
-        </lvc:CartesianChart>
+        </lvc:CartesianChart>-->
 
         <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
