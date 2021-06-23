@@ -70,7 +70,7 @@ namespace p528_gui
             if (String.IsNullOrEmpty(FMHZ) ||
                 !Double.TryParse(FMHZ, out f__mhz) ||
                 f__mhz < 100 ||
-                f__mhz > 15500)
+                f__mhz > 30000)
             {
                 MessageBox.Show(Messages.FrequencyRangeError);
                 f__mhz = -1;

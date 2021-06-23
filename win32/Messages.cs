@@ -16,7 +16,7 @@ namespace p528_gui
 
         public const string Terminal1LessThan2Error = "Terminal 1 must be less than the height of Terminal 2";
 
-        public const string FrequencyRangeError = "The frequency must be between 100 MHz and 15 500 MHz, inclusive";
+        public const string FrequencyRangeError = "The frequency must be between 100 MHz and 30 000 MHz, inclusive";
 
         public const string TimeRangeError = "The time percentage must be between 1 and 99, inclusive.";
     }
