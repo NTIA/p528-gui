@@ -45,6 +45,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+        
         <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):"/>
         <TextBox Grid.Row="1" Grid.Column="1" TabIndex="2" Validation.Error="TextBox_Error">
             <TextBox.Text>
@@ -61,6 +62,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+        
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="2" Grid.Column="1" TabIndex="3" Validation.Error="TextBox_Error">
             <TextBox.Text>

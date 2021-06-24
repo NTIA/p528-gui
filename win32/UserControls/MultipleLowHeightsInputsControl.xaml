@@ -59,6 +59,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+        
         <TextBlock Grid.Row="1" Grid.Column="2" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="1" Grid.Column="3" TabIndex="5" Validation.Error="TextBox_Error">
             <TextBox.Text>
@@ -75,6 +76,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+        
         <TextBlock Grid.Row="2" Grid.Column="2" Text="Time Percentage (%):"/>
         <TextBox Grid.Row="2" Grid.Column="3" TabIndex="6"  Validation.Error="TextBox_Error">
             <TextBox.Text>

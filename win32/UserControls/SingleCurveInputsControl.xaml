@@ -44,7 +44,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
-        <Image Name="img_t1" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="..\img\Warning.png" Visibility="Collapsed"/>
+        
         <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):"/>
         <TextBox Grid.Row="1" Grid.Column="1" TabIndex="2" Validation.Error="TextBox_Error">
             <TextBox.Text>
@@ -61,7 +61,6 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
-        <Image Name="img_t2" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="..\img\Warning.png" Visibility="Collapsed"/>
 
         <TextBlock Grid.Row="0" Grid.Column="3" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="0" Grid.Column="4" TabIndex="3" Validation.Error="TextBox_Error">
@@ -79,6 +78,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+        
         <TextBlock Grid.Row="1" Grid.Column="3" Text="Time Percentage (%):"/>
         <TextBox Grid.Row="1" Grid.Column="4" TabIndex="4" Validation.Error="TextBox_Error">
             <TextBox.Text>

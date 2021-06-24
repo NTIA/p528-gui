@@ -1,7 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:cvtr="clr-namespace:p528_gui.Converters"
-                    xmlns:vr="clr-namespace:p528_gui.ValidationRules">
+                    xmlns:cvtr="clr-namespace:p528_gui.Converters">
     <!-- Data Converters -->
     <cvtr:DoubleToStringConverter x:Key="doubleConverter"/>
 

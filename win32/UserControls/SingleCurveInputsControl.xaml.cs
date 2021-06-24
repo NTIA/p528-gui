@@ -1,26 +1,22 @@
 ﻿using p528_gui.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
     public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, INotifyPropertyChanged
     {
+        #region Private Fields
+
+        private int _errorCnt = 0;
+
         private Units _units;
+
+        #endregion
+
+        #region Public Properties
+
         public Units Units
         {
             get { return _units; }
@@ -52,7 +48,9 @@ namespace p528_gui.UserControls
         /// </summary>
         public double time { get; set; }
 
-        private int _errorCnt = 0;
+        /// <summary>
+        /// Number of validation errors
+        /// </summary>
         public int ErrorCnt
         {
             get { return _errorCnt; }
@@ -63,14 +61,13 @@ namespace p528_gui.UserControls
             }
         }
 
+        #endregion
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SingleCurveInputsControl()
         {
             InitializeComponent();
-
-            img_t1.ToolTip = Messages.TerminalHeightWarning;
-            img_t2.ToolTip = Messages.TerminalHeightWarning;
 
             DataContext = this;
         }
