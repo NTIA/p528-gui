@@ -166,7 +166,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PointViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
