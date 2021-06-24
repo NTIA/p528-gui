@@ -35,4 +35,9 @@
         <Setter Property="Margin" Value="3"/>
         <Setter Property="Padding" Value="5,0"/>
     </Style>
+    <Style TargetType="ComboBox">
+        <Setter Property="Margin" Value="3"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
 </ResourceDictionary>

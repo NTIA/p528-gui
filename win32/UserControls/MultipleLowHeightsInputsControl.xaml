@@ -93,5 +93,16 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+
+        <TextBlock Grid.Row="3" Grid.Column="2" Text="Polarization:"/>
+        <ComboBox Grid.Row="3" Grid.Column="3" TabIndex="7"
+                  ItemsSource="{Binding Source={StaticResource enumPolarization}, Converter={StaticResource polarizationConverter}}"
+                  SelectedItem="{Binding Path=Polarization}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
     </Grid>
 </UserControl>

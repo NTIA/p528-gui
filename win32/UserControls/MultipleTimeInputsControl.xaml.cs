@@ -1,4 +1,5 @@
-﻿using p528_gui.Interfaces;
+﻿using ITS.Propagation;
+using p528_gui.Interfaces;
 using p528_gui.ValidationRules;
 using p528_gui.Windows;
 using System.Collections.Generic;
@@ -52,6 +53,11 @@ namespace p528_gui.UserControls
         /// Time percentages
         /// </summary>
         public ObservableCollection<double> times { get; set; } = new ObservableCollection<double>() { 50 };
+
+        /// <summary>
+        /// Polarization
+        /// </summary>
+        public P528.Polarization Polarization { get; set; }
 
         /// <summary>
         /// Number of validation errors

@@ -238,7 +238,7 @@ namespace p528_gui
                 double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
 
                 int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
-                    P528.Polarization.Horizontal, out List<Point> pts);
+                    inputControl.Polarization, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -277,7 +277,7 @@ namespace p528_gui
                 double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
 
                 int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
-                    P528.Polarization.Horizontal, out List<Point> pts);
+                    inputControl.Polarization, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -310,7 +310,7 @@ namespace p528_gui
             double f__mhz = inputControl.f__mhz;
             double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-            var polarization = P528.Polarization.Horizontal;
+            var polarization = inputControl.Polarization;
 
             List<double> times = new List<double>();
             for (int i = 0; i < inputControl.times.Count; i++)

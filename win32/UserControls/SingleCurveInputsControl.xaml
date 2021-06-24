@@ -64,7 +64,7 @@
         </TextBox>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Polarization:"/>
-        <ComboBox Grid.Row="6" Grid.Column="1" TabIndex="7"
+        <ComboBox Grid.Row="2" Grid.Column="1" TabIndex="7"
                   ItemsSource="{Binding Source={StaticResource enumPolarization}, Converter={StaticResource polarizationConverter}}"
                   SelectedItem="{Binding Path=Polarization}">
             <ComboBox.ItemTemplate>

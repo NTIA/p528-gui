@@ -80,6 +80,17 @@
             </TextBox.Text>
         </TextBox>
 
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Polarization:"/>
+        <ComboBox Grid.Row="3" Grid.Column="1" TabIndex="7"
+                  ItemsSource="{Binding Source={StaticResource enumPolarization}, Converter={StaticResource polarizationConverter}}"
+                  SelectedItem="{Binding Path=Polarization}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
         <TextBlock Name="tb_time" Grid.Row="0" Grid.Column="2" Text="Time Percentage (%):" HorizontalAlignment="Right"/>
         <ListBox Name="lb_times" 
                  Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" 
