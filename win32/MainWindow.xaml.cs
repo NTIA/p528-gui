@@ -51,6 +51,12 @@ namespace p528_gui
         MultipleTimes
     }
 
+    enum Polarization : int
+    {
+        Horizontal = 0,
+        Vertical = 1
+    }
+
     #endregion
 
     public partial class MainWindow : Window
@@ -124,8 +130,9 @@ namespace p528_gui
             var h2__meter = (_units == Units.Meters) ? inputConrol.h_2 : (inputConrol.h_2 * Constants.METER_PER_FOOT);
             double f__mhz = inputConrol.f__mhz;
             double time = inputConrol.time;
+            var polarization = inputConrol.Polarization;
 
-            int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, out List<Point>btgPoints, 
+            int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, polarization, out List<Point>btgPoints, 
                 out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
             // Set any warning messages
@@ -230,7 +237,8 @@ namespace p528_gui
                 double h1 = inputControl.h_1s[i];
                 double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
+                    P528.Polarization.Horizontal, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -268,7 +276,8 @@ namespace p528_gui
                 double h2 = inputControl.h_2s[i];
                 double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
+                    P528.Polarization.Horizontal, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -301,13 +310,14 @@ namespace p528_gui
             double f__mhz = inputControl.f__mhz;
             double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            var polarization = P528.Polarization.Horizontal;
 
             List<double> times = new List<double>();
             for (int i = 0; i < inputControl.times.Count; i++)
             {
                 double time = inputControl.times[i];
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, polarization, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -326,7 +336,7 @@ namespace p528_gui
 
             if (_showFreeSpaceLine)
             {
-                GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, out List<Point> btgPoints, 
+                GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, polarization, out List <Point> btgPoints, 
                     out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
                 // TODO: make dotted line
@@ -347,7 +357,8 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> lossPoints)
+        private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, 
+            P528.Polarization polarization, out List<Point> lossPoints)
         {
             lossPoints = new List<Point>();
 
@@ -362,7 +373,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
+                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
 
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
@@ -379,8 +390,9 @@ namespace p528_gui
             return rtn;
         }
 
-        private int GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> btgPoints, 
-            out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
+        private int GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, double time, P528.Polarization polarization,
+            out List<Point> btgPoints, out List<Point> losPoints, out List<Point> dfracPoints, 
+            out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
         {
             losPoints = new List<Point>();
             dfracPoints = new List<Point>();
@@ -402,7 +414,7 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
+                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
 
                 // convert output distance from P.528 back into user-specified units
                 d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);

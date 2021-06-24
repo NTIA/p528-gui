@@ -1,4 +1,5 @@
-﻿using p528_gui.Interfaces;
+﻿using ITS.Propagation;
+using p528_gui.Interfaces;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
@@ -47,6 +48,11 @@ namespace p528_gui.UserControls
         /// Time percentage
         /// </summary>
         public double time { get; set; }
+
+        /// <summary>
+        /// Polarization
+        /// </summary>
+        public P528.Polarization Polarization { get; set; }
 
         /// <summary>
         /// Number of validation errors

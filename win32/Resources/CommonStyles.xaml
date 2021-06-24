@@ -1,8 +1,18 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:cvtr="clr-namespace:p528_gui.Converters">
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+                    xmlns:cvtr="clr-namespace:p528_gui.Converters"
+                    xmlns:r="clr-namespace:p528_gui">
     <!-- Data Converters -->
     <cvtr:DoubleToStringConverter x:Key="doubleConverter"/>
+    <cvtr:PolarizationConverter x:Key="polarizationConverter"/>
+
+    <!-- Object Data Providers -->
+    <ObjectDataProvider x:Key="enumPolarization" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+        <ObjectDataProvider.MethodParameters>
+            <x:Type TypeName="r:Polarization"/>
+        </ObjectDataProvider.MethodParameters>
+    </ObjectDataProvider>
 
     <!-- Common Input Control Styling -->
     <Style TargetType="TextBox">

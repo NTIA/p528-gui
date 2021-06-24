@@ -26,6 +26,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
 
         <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):"/>
@@ -61,6 +62,17 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Polarization:"/>
+        <ComboBox Grid.Row="6" Grid.Column="1" TabIndex="7"
+                  ItemsSource="{Binding Source={StaticResource enumPolarization}, Converter={StaticResource polarizationConverter}}"
+                  SelectedItem="{Binding Path=Polarization}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
         <TextBlock Grid.Row="0" Grid.Column="3" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="0" Grid.Column="4" TabIndex="3" Validation.Error="TextBox_Error">
