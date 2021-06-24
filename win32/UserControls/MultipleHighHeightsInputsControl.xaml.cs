@@ -1,8 +1,12 @@
 ﻿using p528_gui.Interfaces;
+using p528_gui.ValidationRules;
 using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,7 +21,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleHighHeightsInputsControl : UserControl, IUnitEnabled, IInputValidation
+    public partial class MultipleHighHeightsInputsControl : UserControl, IUnitEnabled, INotifyPropertyChanged
     {
         private Units _units;
         public Units Units
@@ -31,71 +35,67 @@ namespace p528_gui.UserControls
             }
         }
 
-        public double H1 { get; set; }
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
 
-        public List<double> H2s { get; set; } = new List<double>();
+        /// <summary>
+        /// High terminal heights, in user defined units
+        /// </summary>
+        public ObservableCollection<double> h_2s { get; set; } = new ObservableCollection<double>();
 
-        public double FMHZ { get; set; }
+        /// <summary>
+        /// Frequency, in MHz
+        /// </summary>
+        public double f__mhz { get; set; }
 
-        public double TIME { get; set; }
+        /// <summary>
+        /// Time percentage
+        /// </summary>
+        public double time { get; set; }
+
+        private int _errorCnt = 0;
+
+        /// <summary>
+        /// Number of validation errors
+        /// </summary>
+        public int ErrorCnt
+        {
+            get { return _errorCnt; }
+            set
+            {
+                _errorCnt = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public MultipleHighHeightsInputsControl()
         {
             InitializeComponent();
+
+            DataContext = this;
         }
 
-        public bool AreInputsValid()
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
         {
-            if (!Tools.ValidateH1(tb_h1.Text, _units, out double h_1))
-                return Tools.ValidationError(tb_h1);
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
             else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h_1;
-            }
-
-            H2s.Clear();
-            foreach (ListBoxItem item in lb_h2s.Items)
-            {
-                string h2 = item.Content.ToString();
-
-                if (!Tools.ValidateH2(h2, _units, out double h_2))
-                    return false;
-                else
-                {
-                    if (h_1 > h_2)
-                    {
-                        Tools.ValidationError(tb_h1);
-                        MessageBox.Show(Messages.Terminal1LessThan2Error);
-                    }
-                    else
-                    {
-                        Tools.ValidationSuccess(tb_h1);
-
-                        H2s.Add(h_2);
-                    }
-                }
-            }
-
-            if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
-                return Tools.ValidationError(tb_freq);
-            else
-            {
-                Tools.ValidationSuccess(tb_freq);
-                FMHZ = f__mhz;
-            }
-
-            if (!Tools.ValidateTIME(tb_time.Text, out double time))
-                return Tools.ValidationError(tb_time);
-            else
-            {
-                Tools.ValidationSuccess(tb_time);
-                TIME = time / 100;
-            }
-
-            return true;
+                ErrorCnt--;
         }
 
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+
+        #region Event Handlers
+
+        /// <summary>
+        /// Prompt user for new high terminal to add
+        /// </summary>
         private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
         {
             var wndw = new AddHighHeightWindow() { Units = _units };
@@ -103,22 +103,43 @@ namespace p528_gui.UserControls
             if (!wndw.ShowDialog().Value)
                 return;
 
-            lb_h2s.Items.Add(new ListViewItem() { Content = wndw.H2 });
+            if (h_2s.Count == 0)
+            {
+                ErrorCnt--;
+                Validation.ClearInvalid(lb_h2s.GetBindingExpression(ListBox.ItemsSourceProperty));
+            }
+
+            h_2s.Add(wndw.H2);
         }
 
-        private void Lb_h2s_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_h2s.SelectedItems.Count > 0);
-
+        /// <summary>
+        /// Remove selected high height(s) from UI control
+        /// </summary>
         private void Btn_Remove_Click(object sender, RoutedEventArgs e)
         {
-            var itemsToRemove = new List<ListViewItem>();
+            var itemsToRemove = new List<double>();
 
-            foreach (ListViewItem item in lb_h2s.SelectedItems)
+            foreach (double item in lb_h2s.SelectedItems)
                 itemsToRemove.Add(item);
 
             foreach (var item in itemsToRemove)
+                h_2s.Remove(item);
+
+            if (h_2s.Count == 0)
             {
-                lb_h2s.Items.Remove(item);
+                ErrorCnt++;
+
+                var binding = lb_h2s.GetBindingExpression(ListBox.ItemsSourceProperty);
+                var error = new ValidationError(new DoubleValidation(), binding) { ErrorContent = "At least 1 high terminal height is required" };
+                Validation.MarkInvalid(binding, error);
             }
         }
+
+        /// <summary>
+        /// Control if the 'Remove' button is enabled
+        /// </summary>
+        private void Lb_h2s_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_h2s.SelectedItems.Count > 0);
+
+        #endregion
     }
 }

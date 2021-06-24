@@ -4,8 +4,26 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:p528_gui.UserControls"
+             xmlns:cvtr="clr-namespace:p528_gui.Converters"
+             xmlns:vr="clr-namespace:p528_gui.ValidationRules"
              mc:Ignorable="d" 
              d:DesignWidth="800">
+    <UserControl.Resources>
+        <cvtr:DoubleToStringConverter x:Key="doubleConverter"/>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="3"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="Background" Value="Pink"/>
+                    <Setter Property="ToolTip" Value="{Binding RelativeSource={RelativeSource Self}, Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -21,14 +39,64 @@
         </Grid.RowDefinitions>
 
         <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="0" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1" TabIndex="1"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Margin="3" TabIndex="1" Validation.Error="TextBox_Error">
+            <TextBox.Text>
+                <Binding Path="h_1"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="5">
+                    <Binding.ValidationRules>
+                        <vr:TerminalHeightValidation/>
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
         <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h2" TabIndex="2"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Margin="3" TabIndex="2" Validation.Error="TextBox_Error">
+            <TextBox.Text>
+                <Binding Path="h_2"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="10000">
+                    <Binding.ValidationRules>
+                        <vr:TerminalHeightValidation/>
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Frequency (MHz):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="2" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq" TabIndex="3"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Margin="3" TabIndex="3"  Validation.Error="TextBox_Error">
+            <TextBox.Text>
+                <Binding Path="f__mhz"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="5000">
+                    <Binding.ValidationRules>
+                        <vr:FrequencyValidation/>
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
 
         <TextBlock Name="tb_time" Grid.Row="0" Grid.Column="2" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-        <ListBox Name="lb_times" Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" Margin="3" SelectionMode="Multiple" SelectionChanged="Lb_times_SelectionChanged" TabIndex="5"/>
+        <ListBox Name="lb_times" 
+                 Grid.Row="0" Grid.RowSpan="4" Grid.Column="3" 
+                 Margin="3" 
+                 SelectionMode="Multiple" 
+                 SelectionChanged="Lb_times_SelectionChanged" 
+                 TabIndex="5"
+                 ItemsSource="{Binding times}"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.CanContentScroll="True"/>
         <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="3">
             <Button Content="Add" Margin="3" Padding="5,0" Name="btn_Add" Click="Btn_Add_Click" TabIndex="4"/>
             <Button Content="Remove" Margin="3" Padding="5,0" IsEnabled="False" Name="btn_Remove" Click="Btn_Remove_Click" TabIndex="6"/>

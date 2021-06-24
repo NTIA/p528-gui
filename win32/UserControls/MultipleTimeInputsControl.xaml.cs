@@ -1,8 +1,12 @@
 ﻿using p528_gui.Interfaces;
+using p528_gui.ValidationRules;
 using p528_gui.Windows;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,7 +21,7 @@ using System.Windows.Shapes;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleTimeInputsControl : UserControl, IInputValidation
+    public partial class MultipleTimeInputsControl : UserControl, INotifyPropertyChanged
     {
         private Units _units;
         public Units Units
@@ -31,73 +35,62 @@ namespace p528_gui.UserControls
             }
         }
 
-        public double H1 { get; set; }
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
 
-        public double H2 { get; set; }
+        /// <summary>
+        /// High terminal height, in user defined units
+        /// </summary>
+        public double h_2 { get; set; }
 
-        public double FMHZ { get; set; }
+        /// <summary>
+        /// Frequency, in MHz
+        /// </summary>
+        public double f__mhz { get; set; }
 
-        public List<double> TIMEs { get; set; } = new List<double>();
+        /// <summary>
+        /// Time percentages
+        /// </summary>
+        public ObservableCollection<double> times { get; set; } = new ObservableCollection<double>() { 50 };
+
+        private int _errorCnt = 0;
+        public int ErrorCnt
+        {
+            get { return _errorCnt; }
+            set
+            {
+                _errorCnt = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public MultipleTimeInputsControl()
         {
             InitializeComponent();
+
+            DataContext = this;
         }
 
-        public bool AreInputsValid()
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
         {
-            if (!Tools.ValidateH1(tb_h1.Text, _units, out double h_1))
-                return Tools.ValidationError(tb_h1);
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
             else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h_1;
-            }
-
-            if (!Tools.ValidateH2(tb_h2.Text, _units, out double h_2))
-                return Tools.ValidationError(tb_h2);
-            else
-            {
-                Tools.ValidationSuccess(tb_h2);
-                H2 = h_2;
-            }
-
-            if (H1 > H2)
-            {
-                Tools.ValidationError(tb_h1);
-                Tools.ValidationError(tb_h2);
-                MessageBox.Show(Messages.Terminal1LessThan2Error);
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                Tools.ValidationSuccess(tb_h2);
-            }
-
-            if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
-                return Tools.ValidationError(tb_freq);
-            else
-            {
-                Tools.ValidationSuccess(tb_freq);
-                FMHZ = f__mhz;
-            }
-
-            TIMEs.Clear();
-            foreach (ListBoxItem item in lb_times.Items)
-            {
-                string TIME = item.Content.ToString();
-
-                if (!Tools.ValidateTIME(TIME, out double time))
-                    return false;
-                else
-                    TIMEs.Add(time / 100);
-            }
-
-            return true;
+                ErrorCnt--;
         }
 
-        private void Lb_times_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_times.SelectedItems.Count > 0);
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+        #region Event Handlers
+
+        /// <summary>
+        /// Prompt user for new time to add
+        /// </summary>
         private void Btn_Add_Click(object sender, RoutedEventArgs e)
         {
             var wndw = new AddTimeWindow();
@@ -105,20 +98,43 @@ namespace p528_gui.UserControls
             if (!wndw.ShowDialog().Value)
                 return;
 
-            lb_times.Items.Add(new ListViewItem() { Content = wndw.TIME });
+            if (times.Count == 0)
+            {
+                ErrorCnt--;
+                Validation.ClearInvalid(lb_times.GetBindingExpression(ListBox.ItemsSourceProperty));
+            }
+
+            times.Add(wndw.TIME);
         }
 
+        /// <summary>
+        /// Remove selected time(s) from UI control
+        /// </summary>
         private void Btn_Remove_Click(object sender, RoutedEventArgs e)
         {
-            var itemsToRemove = new List<ListViewItem>();
+            var itemsToRemove = new List<double>();
 
-            foreach (ListViewItem item in lb_times.SelectedItems)
+            foreach (double item in lb_times.SelectedItems)
                 itemsToRemove.Add(item);
 
             foreach (var item in itemsToRemove)
+                times.Remove(item);
+
+            if (times.Count == 0)
             {
-                lb_times.Items.Remove(item);
+                ErrorCnt++;
+
+                var binding = lb_times.GetBindingExpression(ListBox.ItemsSourceProperty);
+                var error = new ValidationError(new DoubleValidation(), binding) { ErrorContent = "At least 1 time percentage is required" };
+                Validation.MarkInvalid(binding, error);
             }
         }
+
+        /// <summary>
+        /// Control if the 'Remove' button is enabled
+        /// </summary>
+        private void Lb_times_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_times.SelectedItems.Count > 0);
+
+        #endregion
     }
 }

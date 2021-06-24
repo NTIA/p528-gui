@@ -73,7 +73,7 @@ namespace p528_gui
         private delegate void RenderPlot();
         private RenderPlot Render;
 
-        readonly LogarithmicAxis _xAxis;
+        readonly LinearAxis _xAxis;
         readonly LinearAxis _yAxis;
 
         public MainWindow()
@@ -82,7 +82,7 @@ namespace p528_gui
 
             PlotModel = new PlotModel() { Title = "" };
 
-            _xAxis = new LogarithmicAxis();
+            _xAxis = new LinearAxis();
             _xAxis.Title = "Distance (km)";
             _xAxis.Minimum = 0;
             _xAxis.Maximum = 1800;
@@ -215,24 +215,22 @@ namespace p528_gui
         private void RenderMultipleLowHeights()
         {
             var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
-            if (!inputControl.AreInputsValid())
-                return;
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
 
             PlotModel.Series.Clear();
 
             // convert inputs into metric units
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
             List<double> h_1s__meter = new List<double>();
-            for (int i = 0; i < inputControl.H1s.Count; i++)
+            for (int i = 0; i < inputControl.h_1s.Count; i++)
             {
-                double h1 = inputControl.H1s[i];
+                double h1 = inputControl.h_1s[i];
                 double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -255,24 +253,22 @@ namespace p528_gui
         private void RenderMultipleHighHeights()
         {
             var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
-            if (!inputControl.AreInputsValid())
-                return;
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
 
             PlotModel.Series.Clear();
 
             // convert inputs into metric units
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             List<double> h_2s__meter = new List<double>();
-            for (int i = 0; i < inputControl.H2s.Count; i++)
+            for (int i = 0; i < inputControl.h_2s.Count; i++)
             {
-                double h2 = inputControl.H2s[i];
+                double h2 = inputControl.h_2s[i];
                 double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
+                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, out List<Point> pts);
 
                 // Plot the data
                 var series = new LineSeries()
@@ -295,23 +291,21 @@ namespace p528_gui
         private void RenderMultipleTimes()
         {
             var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
-            if (!inputControl.AreInputsValid())
-                return;
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
 
             PlotModel.Series.Clear();
 
-            double f__mhz = inputControl.FMHZ;
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.f__mhz;
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
 
             List<double> times = new List<double>();
-            for (int i = 0; i < inputControl.TIMEs.Count; i++)
+            for (int i = 0; i < inputControl.times.Count; i++)
             {
-                double time = inputControl.TIMEs[i];
+                double time = inputControl.times[i];
 
                 int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, out List<Point> pts);
 
@@ -417,12 +411,12 @@ namespace p528_gui
                 if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
                     rtn = r;
 
-                switch (result.propagation_mode)
+                switch (result.ModeOfPropagation)
                 {
-                    case 1: // Line-of-Sight
+                    case P528.ModeOfPropagation.LineOfSight: // Line-of-Sight
                         losPoints.Add(new Point(d_out, result.A__db));
                         break;
-                    case 2: // Diffraction
+                    case P528.ModeOfPropagation.Diffraction: // Diffraction
                         if (blendLines && !dfracSwitch)
                         {
                             losPoints.Add(new Point(d_out, result.A__db));   // Adding to ensure there is no gap in the curve
@@ -430,7 +424,7 @@ namespace p528_gui
                         }
                         dfracPoints.Add(new Point(d_out, result.A__db));
                         break;
-                    case 3: // Troposcatter
+                    case P528.ModeOfPropagation.Troposcatter: // Troposcatter
                         if (blendLines && !scatSwitch)
                         {
                             dfracPoints.Add(new Point(d_out, result.A__db)); // Adding to ensure there is no gap in the curve
@@ -517,7 +511,7 @@ namespace p528_gui
                 dists.Add(Math.Round(d_out, 0));
                 A__db.Add(Math.Round(result.A__db, 3));
                 A_fs__db.Add(Math.Round(result.A_fs__db, 3));
-                modes.Add(result.propagation_mode);
+                modes.Add((int)result.ModeOfPropagation);
 
                 d++;
             }
@@ -598,15 +592,15 @@ namespace p528_gui
 
             // Regenerate data at 1 km steps for export
             var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.H1s.Count; i++)
+            for (int i = 0; i < inputControl.h_1s.Count; i++)
                 A__db.Add(new List<double>());
             var dists = new List<double>();
             int warnings = 0;
             double d__km;
 
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.f__mhz;
+            double time = inputControl.time;
 
             double d = _xAxis.Minimum;
             while (d <= _xAxis.Maximum)
@@ -614,9 +608,9 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                for (int i = 0; i < inputControl.H1s.Count; i++)
+                for (int i = 0; i < inputControl.h_1s.Count; i++)
                 {
-                    double h_1__meter = (_units == Units.Meters) ? inputControl.H1s[i] : (inputControl.H1s[i] * Constants.METER_PER_FOOT);
+                    double h_1__meter = (_units == Units.Meters) ? inputControl.h_1s[i] : (inputControl.h_1s[i] * Constants.METER_PER_FOOT);
 
                     var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
@@ -650,7 +644,7 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
@@ -659,26 +653,26 @@ namespace p528_gui
                 {
                     fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.H1s.Count; i++)
+                    for (int i = 0; i < inputControl.h_1s.Count; i++)
                     {
                         var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.WriteLine($"h_1 = {inputControl.H1s[i]} {units},{String.Join(",", A__db[i])}");
+                        fs.WriteLine($"h_1 = {inputControl.h_1s[i]} {units},{String.Join(",", A__db[i])}");
                     }
                 }
                 else
                 {
                     fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.H1s.Count; i++)
+                    for (int i = 0; i < inputControl.h_1s.Count; i++)
                     {
                         var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.Write($",h_1 = {inputControl.H1s[i]} {units}");
+                        fs.Write($",h_1 = {inputControl.h_1s[i]} {units}");
                     }
                     fs.WriteLine();
 
                     for (int i = 0; i < dists.Count; i++)
                     {
                         fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.H1s.Count; j++)
+                        for (int j = 0; j < inputControl.h_1s.Count; j++)
                             fs.Write($",{A__db[j][i]}");
 
                         fs.WriteLine();
@@ -702,15 +696,15 @@ namespace p528_gui
 
             // Regenerate data at 1 km steps for export
             var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.H2s.Count; i++)
+            for (int i = 0; i < inputControl.h_2s.Count; i++)
                 A__db.Add(new List<double>());
             var dists = new List<double>();
             int warnings = 0;
             double d__km;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.f__mhz;
+            double time = inputControl.time;
 
             double d = _xAxis.Minimum;
             while (d <= _xAxis.Maximum)
@@ -718,9 +712,9 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                for (int i = 0; i < inputControl.H2s.Count; i++)
+                for (int i = 0; i < inputControl.h_2s.Count; i++)
                 {
-                    double h_2__meter = (_units == Units.Meters) ? inputControl.H2s[i] : (inputControl.H2s[i] * Constants.METER_PER_FOOT);
+                    double h_2__meter = (_units == Units.Meters) ? inputControl.h_2s[i] : (inputControl.h_2s[i] * Constants.METER_PER_FOOT);
 
                     var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
@@ -754,7 +748,7 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
@@ -763,26 +757,26 @@ namespace p528_gui
                 {
                     fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.H2s.Count; i++)
+                    for (int i = 0; i < inputControl.h_2s.Count; i++)
                     {
                         var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.WriteLine($"h_2 = {inputControl.H2s[i]} {units},{String.Join(",", A__db[i])}");
+                        fs.WriteLine($"h_2 = {inputControl.h_2s[i]} {units},{String.Join(",", A__db[i])}");
                     }
                 }
                 else
                 {
                     fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.H2s.Count; i++)
+                    for (int i = 0; i < inputControl.h_2s.Count; i++)
                     {
                         var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.Write($",h_2 = {inputControl.H2s[i]} {units}");
+                        fs.Write($",h_2 = {inputControl.h_2s[i]} {units}");
                     }
                     fs.WriteLine();
 
                     for (int i = 0; i < dists.Count; i++)
                     {
                         fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.H2s.Count; j++)
+                        for (int j = 0; j < inputControl.h_2s.Count; j++)
                             fs.Write($",{A__db[j][i]}");
 
                         fs.WriteLine();
@@ -806,15 +800,15 @@ namespace p528_gui
 
             // Regenerate data at 1 km steps for export
             var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.TIMEs.Count; i++)
+            for (int i = 0; i < inputControl.times.Count; i++)
                 A__db.Add(new List<double>());
             var dists = new List<double>();
             int warnings = 0;
             double d__km;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double f__mhz = inputControl.f__mhz;
 
             double d = _xAxis.Minimum;
             while (d <= _xAxis.Maximum)
@@ -822,9 +816,9 @@ namespace p528_gui
                 // convert distance to specified units for input to P.528
                 d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
-                for (int i = 0; i < inputControl.TIMEs.Count; i++)
+                for (int i = 0; i < inputControl.times.Count; i++)
                 {
-                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, inputControl.TIMEs[i], out P528.Result result);
+                    var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, inputControl.times[i], out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                     if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
@@ -856,8 +850,8 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine();
 
@@ -865,20 +859,20 @@ namespace p528_gui
                 {
                     fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                        fs.WriteLine($"time = {inputControl.TIMEs[i]} %,{String.Join(",", A__db[i])}");
+                    for (int i = 0; i < inputControl.times.Count; i++)
+                        fs.WriteLine($"time = {inputControl.times[i]} %,{String.Join(",", A__db[i])}");
                 }
                 else
                 {
                     fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                        fs.Write($",time = {inputControl.TIMEs[i]} %");
+                    for (int i = 0; i < inputControl.times.Count; i++)
+                        fs.Write($",time = {inputControl.times[i]} %");
                     fs.WriteLine();
 
                     for (int i = 0; i < dists.Count; i++)
                     {
                         fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.TIMEs.Count; j++)
+                        for (int j = 0; j < inputControl.times.Count; j++)
                             fs.Write($",{A__db[j][i]}");
 
                         fs.WriteLine();
