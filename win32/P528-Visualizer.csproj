@@ -90,6 +90,10 @@
     <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
       <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
     </Compile>
+    <Page Include="Resources\CommonStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UserControls\MultipleHighHeightsInputsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
