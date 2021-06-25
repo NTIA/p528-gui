@@ -1,7 +1,7 @@
 ﻿using ITS.Propagation;
-using p528_gui.Interfaces;
 using p528_gui.ValidationRules;
 using p528_gui.Windows;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,28 +11,15 @@ using System.Windows.Controls;
 
 namespace p528_gui.UserControls
 {
-    public partial class MultipleHighHeightsInputsControl : UserControl, IUnitEnabled, INotifyPropertyChanged
+    public partial class MultipleHighHeightsInputsControl : UserControl, INotifyPropertyChanged
     {
         #region Private Fields
 
         private int _errorCnt = 0;
 
-        private Units _units;
-
         #endregion
 
         #region Public Properties
-
-        public Units Units
-        {
-            get { return _units; }
-            set
-            {
-                _units = value;
-                tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-                tb_t2.Text = "Terminal 2 Heights " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-            }
-        }
 
         /// <summary>
         /// Low terminal height, in user defined units
@@ -80,7 +67,37 @@ namespace p528_gui.UserControls
         {
             InitializeComponent();
 
+            GlobalState.UnitsChanged += GlobalState_UnitsChanged;
+
             DataContext = this;
+        }
+
+        private void GlobalState_UnitsChanged(object sender, EventArgs e)
+        {
+            tb_t1.Text = "Terminal 1 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+            tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+
+            // Need to manually force validation since it only triggers during text updates
+            tb_h1.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+
+            // Manually validation terminal heights in ListBox, removing invalid ones
+            var terminalValidationRule = new TerminalHeightValidation();
+            var removeIndexes = new List<int>();
+            for (int i = 0; i < h_2s.Count; i++)
+            {
+                var result = terminalValidationRule.Validate(h_2s[i], null);
+
+                if (!result.IsValid)
+                    removeIndexes.Add(i);
+            }
+            if (removeIndexes.Count > 0)
+            {
+                MessageBox.Show("Some high terminal heights are invalid for the current units.  These will be removed.");
+
+                for (int i = removeIndexes.Count - 1; i >= 0; i--)
+                    h_2s.RemoveAt(removeIndexes[i]);
+            }
+            Btn_Remove_Click(null, null);   // kicking a validation check of count
         }
 
         private void TextBox_Error(object sender, ValidationErrorEventArgs e)
@@ -102,7 +119,7 @@ namespace p528_gui.UserControls
         /// </summary>
         private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
         {
-            var wndw = new AddHighHeightWindow() { Units = _units };
+            var wndw = new AddHighHeightWindow();
 
             if (!wndw.ShowDialog().Value)
                 return;

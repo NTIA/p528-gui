@@ -114,88 +114,88 @@ namespace p528_gui.Windows
 
         private bool Validate()
         {
-            if (String.IsNullOrEmpty(tb_xAxisMinimum.Text) ||
-                !Double.TryParse(tb_xAxisMinimum.Text, out double xMin) ||
-                xMin < 0)
-            {
-                Tools.ValidationError(tb_xAxisMinimum);
-                MessageBox.Show("Minimum value for X-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisMinimum);
-                _xAxisMin = xMin;
-            }
+            //if (String.IsNullOrEmpty(tb_xAxisMinimum.Text) ||
+            //    !Double.TryParse(tb_xAxisMinimum.Text, out double xMin) ||
+            //    xMin < 0)
+            //{
+            //    Tools.ValidationError(tb_xAxisMinimum);
+            //    MessageBox.Show("Minimum value for X-Axis must be greater than zero");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_xAxisMinimum);
+            //    _xAxisMin = xMin;
+            //}
 
-            if (String.IsNullOrEmpty(tb_xAxisMaximum.Text) ||
-                !Double.TryParse(tb_xAxisMaximum.Text, out double xMax) ||
-                xMax <= _xAxisMin)
-            {
-                Tools.ValidationError(tb_xAxisMaximum);
-                MessageBox.Show("Maximum value for X-Axis must be greater then minimum for X-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisMaximum);
-                _xAxisMax = xMax;
-            }
+            //if (String.IsNullOrEmpty(tb_xAxisMaximum.Text) ||
+            //    !Double.TryParse(tb_xAxisMaximum.Text, out double xMax) ||
+            //    xMax <= _xAxisMin)
+            //{
+            //    Tools.ValidationError(tb_xAxisMaximum);
+            //    MessageBox.Show("Maximum value for X-Axis must be greater then minimum for X-Axis");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_xAxisMaximum);
+            //    _xAxisMax = xMax;
+            //}
 
-            if (String.IsNullOrEmpty(tb_xAxisStep.Text) ||
-                !Double.TryParse(tb_xAxisStep.Text, out double xStep) ||
-                xStep <= 0)
-            {
-                Tools.ValidationError(tb_xAxisStep);
-                MessageBox.Show("Step value for X-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisStep);
-                _xAxisStep = xStep;
-            }
+            //if (String.IsNullOrEmpty(tb_xAxisStep.Text) ||
+            //    !Double.TryParse(tb_xAxisStep.Text, out double xStep) ||
+            //    xStep <= 0)
+            //{
+            //    Tools.ValidationError(tb_xAxisStep);
+            //    MessageBox.Show("Step value for X-Axis must be greater than zero");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_xAxisStep);
+            //    _xAxisStep = xStep;
+            //}
 
-            if (String.IsNullOrEmpty(tb_yAxisMinimum.Text) ||
-                !Double.TryParse(tb_yAxisMinimum.Text, out double yMin))
-            {
-                Tools.ValidationError(tb_yAxisMinimum);
-                MessageBox.Show("Unable to parse minimum value for Y-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisMinimum);
-                _yAxisMin = yMin;
-            }
+            //if (String.IsNullOrEmpty(tb_yAxisMinimum.Text) ||
+            //    !Double.TryParse(tb_yAxisMinimum.Text, out double yMin))
+            //{
+            //    Tools.ValidationError(tb_yAxisMinimum);
+            //    MessageBox.Show("Unable to parse minimum value for Y-Axis");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_yAxisMinimum);
+            //    _yAxisMin = yMin;
+            //}
 
-            if (String.IsNullOrEmpty(tb_yAxisMaximum.Text) ||
-                !Double.TryParse(tb_yAxisMaximum.Text, out double yMax) ||
-                yMax <= _yAxisMin)
-            {
-                Tools.ValidationError(tb_yAxisMaximum);
-                MessageBox.Show("Maximum value for Y-Axis must be greater then minimum for Y-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisMaximum);
-                _yAxisMax = yMax;
-            }
+            //if (String.IsNullOrEmpty(tb_yAxisMaximum.Text) ||
+            //    !Double.TryParse(tb_yAxisMaximum.Text, out double yMax) ||
+            //    yMax <= _yAxisMin)
+            //{
+            //    Tools.ValidationError(tb_yAxisMaximum);
+            //    MessageBox.Show("Maximum value for Y-Axis must be greater then minimum for Y-Axis");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_yAxisMaximum);
+            //    _yAxisMax = yMax;
+            //}
 
-            if (String.IsNullOrEmpty(tb_yAxisStep.Text) ||
-                !Double.TryParse(tb_yAxisStep.Text, out double yStep) ||
-                yStep <= 0)
-            {
-                Tools.ValidationError(tb_yAxisStep);
-                MessageBox.Show("Step value for Y-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisStep);
-                _yAxisStep = yStep;
-            }
+            //if (String.IsNullOrEmpty(tb_yAxisStep.Text) ||
+            //    !Double.TryParse(tb_yAxisStep.Text, out double yStep) ||
+            //    yStep <= 0)
+            //{
+            //    Tools.ValidationError(tb_yAxisStep);
+            //    MessageBox.Show("Step value for Y-Axis must be greater than zero");
+            //    return false;
+            //}
+            //else
+            //{
+            //    Tools.ValidationSuccess(tb_yAxisStep);
+            //    _yAxisStep = yStep;
+            //}
 
             return true;
         }

@@ -2,7 +2,6 @@
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Microsoft.Win32;
-using p528_gui.Interfaces;
 using p528_gui.UserControls;
 using p528_gui.Windows;
 using System;
@@ -93,8 +92,6 @@ namespace p528_gui
         private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
 
         public PlotModel PlotModel { get; set; }
-
-        private Units _units = Units.Meters;
 
         public bool IsModeOfPropVisible { get; set; } = true;
 
@@ -263,19 +260,13 @@ namespace p528_gui
         {
             var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
 
-            mi_Export.IsEnabled = true;
-
-            // convert inputs into metric units
-            var h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            var h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-
             // generate list of jobs - only single curve so just 1 job
             var jobs = new List<ModelArgs>()
             {
                 new ModelArgs()
                 {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
+                    h_1__meter = Tools.ConvertToMeters(inputControl.h_1),
+                    h_2__meter = Tools.ConvertToMeters(inputControl.h_2),
                     f__mhz = inputControl.f__mhz,
                     time = inputControl.time,
                     Polarization = inputControl.Polarization
@@ -291,28 +282,18 @@ namespace p528_gui
         {
             var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
 
-            mi_Export.IsEnabled = true;
-
-            // convert inputs into metric units
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-
             // create a list of jobs
             var jobs = new List<ModelArgs>();
 
-            for (int i = 0; i < inputControl.h_1s.Count; i++)
-            {
-                double h_1 = inputControl.h_1s[i];
-                double h_1__meter = (_units == Units.Meters) ? h_1 : (h_1 * Constants.METER_PER_FOOT);
-
+            foreach (double h_1 in inputControl.h_1s)
                 jobs.Add(new ModelArgs()
                 {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
+                    h_1__meter = Tools.ConvertToMeters(h_1),
+                    h_2__meter = Tools.ConvertToMeters(inputControl.h_2),
                     f__mhz = inputControl.f__mhz,
                     time = inputControl.time,
                     Polarization = inputControl.Polarization
                 });
-            }
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
@@ -323,28 +304,18 @@ namespace p528_gui
         {
             var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
 
-            mi_Export.IsEnabled = true;
-
-            // convert inputs into metric units
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-
             // create a list of jobs
             var jobs = new List<ModelArgs>();
 
-            for (int i = 0; i < inputControl.h_2s.Count; i++)
-            {
-                double h_2 = inputControl.h_2s[i];
-                double h_2__meter = (_units == Units.Meters) ? h_2 : (h_2 * Constants.METER_PER_FOOT);
-
+            foreach (double h_2 in inputControl.h_2s)
                 jobs.Add(new ModelArgs()
                 {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
+                    h_1__meter = Tools.ConvertToMeters(inputControl.h_1),
+                    h_2__meter = Tools.ConvertToMeters(h_2),
                     f__mhz = inputControl.f__mhz,
                     time = inputControl.time,
                     Polarization = inputControl.Polarization
                 });
-            }
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
@@ -355,25 +326,18 @@ namespace p528_gui
         {
             var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
 
-            mi_Export.IsEnabled = true;
-
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-
             // create a list of jobs
             var jobs = new List<ModelArgs>();
 
             foreach (var time in inputControl.times)
-            {
                 jobs.Add(new ModelArgs()
                 {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
+                    h_1__meter = Tools.ConvertToMeters(inputControl.h_1),
+                    h_2__meter = Tools.ConvertToMeters(inputControl.h_2),
                     f__mhz = inputControl.f__mhz,
                     time = time,
                     Polarization = inputControl.Polarization
                 });
-            }
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
@@ -404,8 +368,6 @@ namespace p528_gui
             {
                 var curveData = new CurveData();
 
-                double d__km, d_out__user_units;
-
                 // iterate on user-specified units (km or n miles)
                 int steps = 500;
                 double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / steps;
@@ -413,21 +375,21 @@ namespace p528_gui
 
                 while (d__user_units <= _xAxis.Maximum)
                 {
-                    // convert distance to specified units for input to P.528
-                    d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
-
-                    var rtn = P528.Invoke(d__km, jobs[i].h_1__meter, jobs[i].h_2__meter, jobs[i].f__mhz, 
-                        jobs[i].Polarization, jobs[i].time, out P528.Result result);
-
-                    // convert output distance from P.528 back into user-specified units
-                    d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+                    var rtn = P528.Invoke(
+                        Tools.ConvertToKm(d__user_units), 
+                        jobs[i].h_1__meter, 
+                        jobs[i].h_2__meter, 
+                        jobs[i].f__mhz, 
+                        jobs[i].Polarization, 
+                        jobs[i].time, 
+                        out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
                     if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
                         curveData.Rtn = rtn;
 
                     // record the result
-                    curveData.Distances.Add(d_out__user_units);
+                    curveData.Distances.Add(Tools.ConvertFromKm(result.d__km));
                     curveData.L_btl__db.Add(result.A__db);
                     curveData.L_fs__db.Add(result.A_fs__db);
                     curveData.PropModes.Add(result.ModeOfPropagation);
@@ -542,7 +504,7 @@ namespace p528_gui
                     MarkerSize = 0,
                     LineStyle = OxyPlot.LineStyle.Solid,
                     Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
-                    Title = $"{inputControl.h_1s[j]} {_units.ToString()}",
+                    Title = $"{inputControl.h_1s[j]} {GlobalState.Units}",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
@@ -589,7 +551,7 @@ namespace p528_gui
                     MarkerSize = 0,
                     LineStyle = LineStyle.Solid,
                     Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
-                    Title = $"{inputControl.h_2s[j]} {_units.ToString()}",
+                    Title = $"{inputControl.h_2s[j]} {GlobalState.Units}",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
@@ -608,6 +570,9 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
+        /// <summary>
+        /// Multiple times curves job is completed
+        /// </summary>
         private void Worker_MultipleTimesWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             // unsubscribe to future events
@@ -703,8 +668,8 @@ namespace p528_gui
             int warnings = 0;
             double d__km, d_out;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double h_1__meter = Tools.ConvertToMeters(inputControl.h_1);
+            double h_2__meter = Tools.ConvertToMeters(inputControl.h_2);
             double f__mhz = inputControl.f__mhz;
             double time = inputControl.time;
 
@@ -712,7 +677,7 @@ namespace p528_gui
             while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+                d__km = Tools.ConvertToKm(d);
 
                 var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
@@ -721,7 +686,7 @@ namespace p528_gui
                     warnings = r;
 
                 // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+                d_out = Tools.ConvertFromKm(result.d__km);
 
                 dists.Add(Math.Round(d_out, 0));
                 A__db.Add(Math.Round(result.A__db, 3));
@@ -748,8 +713,8 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
@@ -759,7 +724,7 @@ namespace p528_gui
 
                 if (exportOptionsWndw.IsRowAlignedData)
                 {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
                     fs.WriteLine($"A__db,{String.Join(",", A__db)}");
                     if (exportOptionsWndw.IncludeFreeSpaceLoss)
@@ -769,7 +734,7 @@ namespace p528_gui
                 }
                 else
                 {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.Write("A__db");
                     if (exportOptionsWndw.IncludeFreeSpaceLoss)
                         fs.Write(",A_fs__db");
@@ -811,7 +776,7 @@ namespace p528_gui
             int warnings = 0;
             double d__km;
 
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double h_2__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
             double f__mhz = inputControl.f__mhz;
             double time = inputControl.time;
 
@@ -819,11 +784,11 @@ namespace p528_gui
             while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+                d__km = (GlobalState.Units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
                 for (int i = 0; i < inputControl.h_1s.Count; i++)
                 {
-                    double h_1__meter = (_units == Units.Meters) ? inputControl.h_1s[i] : (inputControl.h_1s[i] * Constants.METER_PER_FOOT);
+                    double h_1__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_1s[i] : (inputControl.h_1s[i] * Constants.METER_PER_FOOT);
 
                     var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
@@ -855,27 +820,27 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
 
                 if (exportOptionsWndw.IsRowAlignedData)
                 {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
                     for (int i = 0; i < inputControl.h_1s.Count; i++)
                     {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
+                        var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
                         fs.WriteLine($"h_1 = {inputControl.h_1s[i]} {units},{String.Join(",", A__db[i])}");
                     }
                 }
                 else
                 {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
+                    fs.Write((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile");
                     for (int i = 0; i < inputControl.h_1s.Count; i++)
                     {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
+                        var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
                         fs.Write($",h_1 = {inputControl.h_1s[i]} {units}");
                     }
                     fs.WriteLine();
@@ -913,7 +878,7 @@ namespace p528_gui
             int warnings = 0;
             double d__km;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_1__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             double f__mhz = inputControl.f__mhz;
             double time = inputControl.time;
 
@@ -921,11 +886,11 @@ namespace p528_gui
             while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+                d__km = (GlobalState.Units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
                 for (int i = 0; i < inputControl.h_2s.Count; i++)
                 {
-                    double h_2__meter = (_units == Units.Meters) ? inputControl.h_2s[i] : (inputControl.h_2s[i] * Constants.METER_PER_FOOT);
+                    double h_2__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_2s[i] : (inputControl.h_2s[i] * Constants.METER_PER_FOOT);
 
                     var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, P528.Polarization.Horizontal, time, out P528.Result result);
 
@@ -957,27 +922,27 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine($"time%,{time * 100}");
                 fs.WriteLine();
 
                 if (exportOptionsWndw.IsRowAlignedData)
                 {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
                     for (int i = 0; i < inputControl.h_2s.Count; i++)
                     {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
+                        var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
                         fs.WriteLine($"h_2 = {inputControl.h_2s[i]} {units},{String.Join(",", A__db[i])}");
                     }
                 }
                 else
                 {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
+                    fs.Write((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile");
                     for (int i = 0; i < inputControl.h_2s.Count; i++)
                     {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
+                        var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
                         fs.Write($",h_2 = {inputControl.h_2s[i]} {units}");
                     }
                     fs.WriteLine();
@@ -1015,15 +980,15 @@ namespace p528_gui
             int warnings = 0;
             double d__km;
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+            double h_1__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (GlobalState.Units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
             double f__mhz = inputControl.f__mhz;
 
             double d = _xAxis.Minimum;
             while (d <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+                d__km = (GlobalState.Units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
 
                 for (int i = 0; i < inputControl.times.Count; i++)
                 {
@@ -1057,21 +1022,21 @@ namespace p528_gui
                 }
 
                 fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.h_1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.h_2}," + ((_units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_1,{inputControl.h_1}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
+                fs.WriteLine($"h_2,{inputControl.h_2}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"f__mhz,{f__mhz}");
                 fs.WriteLine();
 
                 if (exportOptionsWndw.IsRowAlignedData)
                 {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
+                    fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
                     fs.WriteLine($"{String.Join(",", dists)}");
                     for (int i = 0; i < inputControl.times.Count; i++)
                         fs.WriteLine($"time = {inputControl.times[i]} %,{String.Join(",", A__db[i])}");
                 }
                 else
                 {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
+                    fs.Write((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile");
                     for (int i = 0; i < inputControl.times.Count; i++)
                         fs.Write($",time = {inputControl.times[i]} %");
                     fs.WriteLine();
@@ -1127,47 +1092,50 @@ namespace p528_gui
         private void Mi_About_Click(object sender, RoutedEventArgs e)
             => new AboutWindow().ShowDialog();
 
-        #endregion
-
+        /// <summary>
+        /// Set units to Meters
+        /// </summary>
         private void Mi_Units_Meters_Click(object sender, RoutedEventArgs e)
         {
             mi_Units_Meters.IsChecked = true;
             mi_Units_Feet.IsChecked = false;
-            _units = Units.Meters;
+
+            GlobalState.Units = Units.Meters;
 
             SetUnits();
         }
 
+        /// <summary>
+        /// Set units to Feet
+        /// </summary>
         private void Mi_Units_Feet_Click(object sender, RoutedEventArgs e)
         {
             mi_Units_Feet.IsChecked = true;
             mi_Units_Meters.IsChecked = false;
-            _units = Units.Feet;
+
+            GlobalState.Units = Units.Feet;
 
             SetUnits();
         }
 
+        #endregion
+
+
         private void SetUnits()
         {
-            if (grid_InputControls.Children.Count > 0)
-            {
-                // Update text
-                (grid_InputControls.Children[0] as IUnitEnabled).Units = _units;
-                _xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
-                ResetPlot();
-                //customToolTip.Units = _units;
-            }
+            if (grid_InputControls.Children.Count == 0)
+                return;
 
-            // Clear plot data
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
+            // Update text
+            _xAxis.Title = "Distance " + ((GlobalState.Units == Units.Meters) ? "(km)" : "(n mile)");
+            ResetPlotAxis();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
         {
             var limitsWndw = new AxisLimitsWindow()
             {
-                XAxisUnit = (_units == Units.Meters) ? "km" : "n mile",
+                XAxisUnit = (GlobalState.Units == Units.Meters) ? "km" : "n mile",
                 XAxisMaximum = _xAxis.Maximum,
                 XAxisMinimum = _xAxis.Minimum,
                 //XAxisStep = xSeparator.Step,
@@ -1188,11 +1156,11 @@ namespace p528_gui
             //ySeparator.Step = limitsWndw.YAxisStep;
         }
 
-        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlot();
+        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlotAxis();
         
-        private void ResetPlot()
+        private void ResetPlotAxis()
         {
-            if (_units == Units.Meters)
+            if (GlobalState.Units == Units.Meters)
                 _xAxis.Maximum = 1800;
             else
                 _xAxis.Maximum = 970;
@@ -1206,6 +1174,9 @@ namespace p528_gui
             ResetPlotData();
         }
 
+        /// <summary>
+        /// Clear the plot and its line series of all data
+        /// </summary>
         private void ResetPlotData()
         {
             // clear the plot of any data series
@@ -1217,6 +1188,8 @@ namespace p528_gui
             _scatSeries.Points.Clear();
             _btlSeries.Points.Clear();
             _fsSeries.Points.Clear();
+
+            plot.InvalidatePlot();
         }
 
         
@@ -1246,7 +1219,7 @@ namespace p528_gui
                 case PlotMode.Single:
                     Render = RenderSingleCurve;
 
-                    userControl = new SingleCurveInputsControl() { Units = _units };
+                    userControl = new SingleCurveInputsControl();
                     
                     mi_View.Visibility = Visibility.Visible;
                     IsModeOfPropVisible = true;
@@ -1255,7 +1228,7 @@ namespace p528_gui
                 case PlotMode.MultipleLowTerminals:
                     Render = RenderMultipleLowHeights;
 
-                    userControl = new MultipleLowHeightsInputsControl() { Units = _units };
+                    userControl = new MultipleLowHeightsInputsControl();
 
                     mi_View.Visibility = Visibility.Collapsed;
                     IsModeOfPropVisible = true;
@@ -1264,7 +1237,7 @@ namespace p528_gui
                 case PlotMode.MultipleHighTerminals:
                     Render = RenderMultipleHighHeights;
 
-                    userControl = new MultipleHighHeightsInputsControl() { Units = _units };
+                    userControl = new MultipleHighHeightsInputsControl();
 
                     mi_View.Visibility = Visibility.Collapsed;
                     IsModeOfPropVisible = true;
@@ -1273,7 +1246,7 @@ namespace p528_gui
                 case PlotMode.MultipleTimes:
                     Render = RenderMultipleTimes;
 
-                    userControl = new MultipleTimeInputsControl() { Units = _units };
+                    userControl = new MultipleTimeInputsControl();
 
                     mi_View.Visibility = Visibility.Visible;
                     IsModeOfPropVisible = false;
@@ -1305,6 +1278,9 @@ namespace p528_gui
             //ActivePlot = false;
         }
 
+        /// <summary>
+        /// Program initialization method - fired at startup
+        /// </summary>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // initialized application for Single Curve Mode
@@ -1312,6 +1288,10 @@ namespace p528_gui
             command.Execute(PlotMode.Single);
         }
 
-        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e) => _worker.CancelAsync();
+        /// <summary>
+        /// Cancel the background worker
+        /// </summary>
+        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e) 
+            => _worker.CancelAsync();
     }
 }

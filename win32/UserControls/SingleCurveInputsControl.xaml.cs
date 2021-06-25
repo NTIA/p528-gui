@@ -1,33 +1,20 @@
 ﻿using ITS.Propagation;
-using p528_gui.Interfaces;
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 
 namespace p528_gui.UserControls
 {
-    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, INotifyPropertyChanged
+    public partial class SingleCurveInputsControl : UserControl, INotifyPropertyChanged
     {
         #region Private Fields
 
         private int _errorCnt = 0;
 
-        private Units _units;
-
         #endregion
 
         #region Public Properties
-
-        public Units Units
-        {
-            get { return _units; }
-            set
-            {
-                _units = value;
-                tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-                tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-            }
-        }
 
         /// <summary>
         /// Low terminal height, in user defined units
@@ -75,7 +62,20 @@ namespace p528_gui.UserControls
         {
             InitializeComponent();
 
+            GlobalState.UnitsChanged += GlobalState_UnitsChanged;
+
             DataContext = this;
+        }
+
+        private void GlobalState_UnitsChanged(object sender, EventArgs e)
+        {
+            tb_t1.Text = "Terminal 1 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+            tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+
+            // Need to manually force validation since it only triggers during text updates
+            foreach (var child in grid_Main.Children)
+                if (child is TextBox)
+                   (child as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
         }
 
         private void TextBox_Error(object sender, ValidationErrorEventArgs e)

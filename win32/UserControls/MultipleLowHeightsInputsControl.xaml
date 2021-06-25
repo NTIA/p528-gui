@@ -13,7 +13,7 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -30,21 +30,21 @@
 
         <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Heights (m):" HorizontalAlignment="Right"/>
         <ListBox Name="lb_h1s" 
-                 Grid.Row="0" Grid.RowSpan="4" Grid.Column="1" 
-                 Margin="3" 
+                 Grid.Row="0" Grid.RowSpan="4" 
+                 Margin="184,3,21,3" 
                  SelectionMode="Multiple" 
                  SelectionChanged="Lb_h1s_SelectionChanged" 
                  TabIndex="2"
                  ItemsSource="{Binding h_1s}"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                 ScrollViewer.CanContentScroll="True"/>
+                 ScrollViewer.CanContentScroll="True" Grid.ColumnSpan="2"/>
         <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="3">
             <Button Content="Add" Name="btn_AddHeight" Click="Btn_AddHeight_Click" TabIndex="1"/>
             <Button Content="Remove" IsEnabled="False" Name="btn_Remove" Click="Btn_Remove_Click" TabIndex="3"/>
         </StackPanel>
-        
+
         <TextBlock Name="tb_t2" Grid.Row="0" Grid.Column="2" Text="Terminal 2 Height (m):"/>
-        <TextBox Grid.Row="0" Grid.Column="3" TabIndex="4" Validation.Error="TextBox_Error">
+        <TextBox Name="tb_h2" Grid.Row="0" Grid.Column="3" TabIndex="4" Validation.Error="TextBox_Error">
             <TextBox.Text>
                 <Binding Path="h_2"
                          UpdateSourceTrigger="PropertyChanged"
@@ -59,7 +59,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
-        
+
         <TextBlock Grid.Row="1" Grid.Column="2" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="1" Grid.Column="3" TabIndex="5" Validation.Error="TextBox_Error">
             <TextBox.Text>
@@ -76,7 +76,7 @@
                 </Binding>
             </TextBox.Text>
         </TextBox>
-        
+
         <TextBlock Grid.Row="2" Grid.Column="2" Text="Time Percentage (%):"/>
         <TextBox Grid.Row="2" Grid.Column="3" TabIndex="6"  Validation.Error="TextBox_Error">
             <TextBox.Text>

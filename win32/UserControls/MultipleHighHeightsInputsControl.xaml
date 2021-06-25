@@ -30,7 +30,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):"/>
-        <TextBox Grid.Row="0" Grid.Column="1" TabIndex="1" Validation.Error="TextBox_Error">
+        <TextBox Name="tb_h1" Grid.Row="0" Grid.Column="1" TabIndex="1" Validation.Error="TextBox_Error">
             <TextBox.Text>
                 <Binding Path="h_1"
                          UpdateSourceTrigger="PropertyChanged"
