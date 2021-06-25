@@ -1192,8 +1192,6 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        
-
         /// <summary>
         /// Controls the application mode with respect to the type of plot generated
         /// </summary>

@@ -139,6 +139,7 @@
     <Compile Include="ValidationRules\DoubleValidation.cs" />
     <Compile Include="ValidationRules\FrequencyValidation.cs" />
     <Compile Include="ValidationRules\TerminalHeightValidation.cs" />
+    <Compile Include="ValidationRules\TerminalRelationshipValidation.cs" />
     <Compile Include="ValidationRules\TimeValidation.cs" />
     <Compile Include="Windows\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>

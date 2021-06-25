@@ -73,7 +73,7 @@ namespace p528_gui.UserControls
             tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
 
             // Need to manually force validation since it only triggers during text updates
-            foreach (var child in grid_Main.Children)
+            foreach (var child in grid_Terminals.Children)
                 if (child is TextBox)
                    (child as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
         }
@@ -88,5 +88,7 @@ namespace p528_gui.UserControls
 
         protected void OnPropertyChanged([CallerMemberName] string name = null) => 
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e) => grid_Terminals?.BindingGroup.CommitEdit();
     }
 }
