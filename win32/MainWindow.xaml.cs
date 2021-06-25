@@ -26,6 +26,7 @@ using System.Windows.Shapes;
 using ITS.Propagation;
 using p528_gui.Converters;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace p528_gui
 {
@@ -86,7 +87,7 @@ namespace p528_gui
         public List<P528.ModeOfPropagation> PropModes { get; set; } = new List<P528.ModeOfPropagation>();
     }
 
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         private const int ERROR_HEIGHT_AND_DISTANCE = 10;
         private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
@@ -104,6 +105,24 @@ namespace p528_gui
         readonly LinearAxis _yAxis;
 
         public bool IsFreeSpaceLineVisible { get; set; } = true;
+
+        private bool _isWorking { get; set; } = false;
+        public bool IsWorking
+        {
+            get { return _isWorking; }
+            set
+            {
+                _isWorking = value;
+                OnPropertyChanged();
+            }
+        }
+
+        Binding _isWorkingBinding;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         LineSeries _fsSeries;
         LineSeries _btlSeries;
@@ -143,6 +162,11 @@ namespace p528_gui
             Render = RenderSingleCurve;
 
             InitializeLineSeries();
+
+            _isWorkingBinding = new Binding("IsWorking");
+            _isWorkingBinding.Source = this;
+            _isWorkingBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            _isWorkingBinding.Converter = new BooleanInverterConverter();
         }
 
         private void InitializeLineSeries()
@@ -223,7 +247,7 @@ namespace p528_gui
             var h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             var h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
 
-            // generate list of jobs
+            // generate list of jobs - only single curve so just 1 job
             var jobs = new List<ModelArgs>();
             jobs.Add(new ModelArgs()
             {
@@ -249,15 +273,7 @@ namespace p528_gui
             // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((curveData.Rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
 
-            // clear the plot of any data series
-            PlotModel.Series.Clear();
-
-            // clear lines series of data points
-            _losSeries.Points.Clear();
-            _dfracSeries.Points.Clear();
-            _scatSeries.Points.Clear();
-            _btlSeries.Points.Clear();
-            _fsSeries.Points.Clear();
+            ResetPlotData();
 
             // build lines
             for (int i = 0; i < curveData.Distances.Count; i++)
@@ -296,6 +312,8 @@ namespace p528_gui
 
         private void Worker_RunP528(object sender, DoWorkEventArgs e)
         {
+            IsWorking = true;
+
             var jobs = (List<ModelArgs>)e.Argument;
 
             var jobResults = new List<CurveData>();
@@ -338,6 +356,8 @@ namespace p528_gui
             }
 
             e.Result = jobResults;
+
+            IsWorking = false;
         }
 
         private void RenderMultipleLowHeights()
@@ -380,8 +400,7 @@ namespace p528_gui
 
             var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
 
-            // Plot the data
-            PlotModel.Series.Clear();
+            ResetPlotData();
 
             int j = 0;
             foreach (var curveData in jobResults)
@@ -452,8 +471,7 @@ namespace p528_gui
 
             var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
 
-            // Plot the data
-            PlotModel.Series.Clear();
+            ResetPlotData();
 
             int j = 0;
             foreach (var curveData in jobResults)
@@ -521,8 +539,7 @@ namespace p528_gui
 
             var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
 
-            // Plot the data
-            PlotModel.Series.Clear();
+            ResetPlotData();
 
             int j = 0;
             foreach (var curveData in jobResults)
@@ -993,11 +1010,7 @@ namespace p528_gui
 
         #endregion
 
-        private void Mi_About_Click(object sender, RoutedEventArgs e)
-        {
-            var aboutWindow = new AboutWindow();
-            aboutWindow.ShowDialog();
-        }
+        
 
         #region Menu Event Handlers
 
@@ -1027,6 +1040,12 @@ namespace p528_gui
 
             plot.InvalidatePlot();
         }
+
+        /// <summary>
+        /// Show the About window
+        /// </summary>
+        private void Mi_About_Click(object sender, RoutedEventArgs e)
+            => new AboutWindow().ShowDialog();
 
         #endregion
 
@@ -1104,6 +1123,19 @@ namespace p528_gui
             Render?.Invoke();
         }
 
+        private void ResetPlotData()
+        {
+            // clear the plot of any data series
+            PlotModel.Series.Clear();
+
+            // clear lines series of data points
+            _losSeries.Points.Clear();
+            _dfracSeries.Points.Clear();
+            _scatSeries.Points.Clear();
+            _btlSeries.Points.Clear();
+            _fsSeries.Points.Clear();
+        }
+
         
 
         /// <summary>
@@ -1123,77 +1155,66 @@ namespace p528_gui
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
 
+            UserControl userControl = null;            
+
             // set the application with the correct UI elements and configuration
             switch (plotMode)
             {
                 case PlotMode.Single:
                     Render = RenderSingleCurve;
 
-                    var singleCurveCtrl = new SingleCurveInputsControl() { Units = _units };
-                    grid_InputControls.Children.Add(singleCurveCtrl);
+                    userControl = new SingleCurveInputsControl() { Units = _units };
                     
                     mi_View.Visibility = Visibility.Visible;
                     IsModeOfPropVisible = true;
-
-                    Binding binding1 = new Binding("ErrorCnt");
-                    binding1.Source = singleCurveCtrl;
-                    binding1.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-                    binding1.Converter = new IntegerToBooleanConverter();
-
-                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding1);
                     break;
 
                 case PlotMode.MultipleLowTerminals:
                     Render = RenderMultipleLowHeights;
 
-                    var multipleLowCtrl = new MultipleLowHeightsInputsControl() { Units = _units };
-                    grid_InputControls.Children.Add(multipleLowCtrl);
+                    userControl = new MultipleLowHeightsInputsControl() { Units = _units };
 
                     mi_View.Visibility = Visibility.Collapsed;
                     IsModeOfPropVisible = true;
-
-                    Binding binding2 = new Binding("ErrorCnt");
-                    binding2.Source = multipleLowCtrl;
-                    binding2.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-                    binding2.Converter = new IntegerToBooleanConverter();
-
-                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding2);
                     break;
 
                 case PlotMode.MultipleHighTerminals:
                     Render = RenderMultipleHighHeights;
 
-                    var multipleHighCtrl = new MultipleHighHeightsInputsControl() { Units = _units };
-                    grid_InputControls.Children.Add(multipleHighCtrl);
+                    userControl = new MultipleHighHeightsInputsControl() { Units = _units };
 
                     mi_View.Visibility = Visibility.Collapsed;
                     IsModeOfPropVisible = true;
-
-                    Binding binding3 = new Binding("ErrorCnt");
-                    binding3.Source = multipleHighCtrl;
-                    binding3.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-                    binding3.Converter = new IntegerToBooleanConverter();
-
-                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding3);
                     break;
 
                 case PlotMode.MultipleTimes:
                     Render = RenderMultipleTimes;
 
-                    var multipleTimesCtrl = new MultipleTimeInputsControl() { Units = _units };
-                    grid_InputControls.Children.Add(multipleTimesCtrl);
+                    userControl = new MultipleTimeInputsControl() { Units = _units };
 
                     mi_View.Visibility = Visibility.Visible;
                     IsModeOfPropVisible = false;
-
-                    Binding binding4 = new Binding("ErrorCnt");
-                    binding4.Source = multipleTimesCtrl;
-                    binding4.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-                    binding4.Converter = new IntegerToBooleanConverter();
-
-                    BindingOperations.SetBinding(btn_Render, Button.IsEnabledProperty, binding4);
                     break;
             }
+
+            grid_InputControls.Children.Add(userControl);
+
+            // define binding for input validation errors
+            Binding inputErrorBinding = new Binding("ErrorCnt");
+            inputErrorBinding.Source = userControl;
+            inputErrorBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            inputErrorBinding.Converter = new IntegerToBooleanConverter();
+
+            // define multibinding for Render button to both input validation and background worker status
+            MultiBinding multiBinding = new MultiBinding();
+            multiBinding.Bindings.Add(inputErrorBinding);
+            multiBinding.Bindings.Add(_isWorkingBinding);
+            multiBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            multiBinding.Converter = new MultipleBooleanAndConverter();
+
+            // set bindings
+            BindingOperations.SetBinding(userControl, IsEnabledProperty, _isWorkingBinding);
+            BindingOperations.SetBinding(btn_Render, IsEnabledProperty, multiBinding);
 
             // force update the view
             PlotModel.Series.Clear();

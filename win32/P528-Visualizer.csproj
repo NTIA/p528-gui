@@ -72,8 +72,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
+    <Compile Include="Converters\BooleanInverterConverter.cs" />
     <Compile Include="Converters\DoubleToStringConverter.cs" />
     <Compile Include="Converters\IntegerToBooleanConverter.cs" />
+    <Compile Include="Converters\MultipleBooleanAndConverter.cs" />
     <Compile Include="Converters\PolarizationConverter.cs" />
     <Compile Include="Interfaces\IUnitEnabled.cs" />
     <Compile Include="Messages.cs" />
