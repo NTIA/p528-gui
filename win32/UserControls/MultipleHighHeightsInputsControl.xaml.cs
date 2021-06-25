@@ -42,7 +42,7 @@ namespace p528_gui.UserControls
         /// <summary>
         /// High terminal heights, in user defined units
         /// </summary>
-        public ObservableCollection<double> h_2s { get; set; } = new ObservableCollection<double>();
+        public ObservableCollection<double> h_2s { get; set; } = new ObservableCollection<double>() { 1000 };
 
         /// <summary>
         /// Frequency, in MHz
@@ -113,7 +113,7 @@ namespace p528_gui.UserControls
                 Validation.ClearInvalid(lb_h2s.GetBindingExpression(ListBox.ItemsSourceProperty));
             }
 
-            h_2s.Add(wndw.H2);
+            h_2s.Add(wndw.h_2);
         }
 
         /// <summary>

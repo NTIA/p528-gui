@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace p528_gui.Converters
@@ -14,11 +10,17 @@ namespace p528_gui.Converters
     /// </summary>
     public class IntegerToBooleanConverter : IValueConverter
     {
+        /// <summary>
+        /// Convert from Integer to Boolean
+        /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return ((int)value == 0);
+            return (int)value == 0;
         }
 
+        /// <summary>
+        /// Convert from Boolean to Integer
+        /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();

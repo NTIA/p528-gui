@@ -112,7 +112,7 @@ namespace p528_gui.UserControls
                 Validation.ClearInvalid(lb_h1s.GetBindingExpression(ListBox.ItemsSourceProperty));
             }
 
-            h_1s.Add(wndw.H1);
+            h_1s.Add(wndw.h_1);
         }
 
         /// <summary>

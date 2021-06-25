@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using ITS.Propagation;
 
@@ -11,6 +7,9 @@ namespace p528_gui.Converters
 {
     class PolarizationConverter : IValueConverter
     {
+        /// <summary>
+        /// Convert from GUI Polarization to P528.Polarization
+        /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var vs = (Polarization[])value;

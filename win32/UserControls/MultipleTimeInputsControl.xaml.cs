@@ -112,7 +112,7 @@ namespace p528_gui.UserControls
                 Validation.ClearInvalid(lb_times.GetBindingExpression(ListBox.ItemsSourceProperty));
             }
 
-            times.Add(wndw.TIME);
+            times.Add(wndw.time);
         }
 
         /// <summary>

@@ -76,7 +76,6 @@
     <Compile Include="Converters\IntegerToBooleanConverter.cs" />
     <Compile Include="Converters\PolarizationConverter.cs" />
     <Compile Include="Interfaces\IUnitEnabled.cs" />
-    <Compile Include="Interfaces\IInputValidation.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Tools.cs" />
     <Compile Include="UserControls\MultipleHighHeightsInputsControl.xaml.cs">
@@ -201,7 +200,6 @@
     <Resource Include="favicon.ico" />
     <Resource Include="img\favicon.ico" />
     <Resource Include="img\logo.png" />
-    <Resource Include="img\Warning.png" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

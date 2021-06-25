@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,9 +16,18 @@ using System.Windows.Shapes;
 
 namespace p528_gui.Windows
 {
-    public partial class AddLowHeightWindow : Window
+    public partial class AddLowHeightWindow : Window, INotifyPropertyChanged
     {
+        #region Private Fields
+
+        private int _errorCnt = 0;
+
         private Units _units;
+
+        #endregion
+
+        #region Public Properties
+
         public Units Units
         {
             get { return _units; }
@@ -27,25 +38,50 @@ namespace p528_gui.Windows
             }
         }
 
-        public double H1 { get; set; }
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
+
+        /// <summary>
+        /// Number of validation errors
+        /// </summary>
+        public int ErrorCnt
+        {
+            get { return _errorCnt; }
+            set
+            {
+                _errorCnt = value;
+                OnPropertyChanged();
+            }
+        }
+
+        #endregion
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public AddLowHeightWindow()
         {
             InitializeComponent();
+
+            DataContext = this;
         }
+
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
+        {
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
+            else
+                ErrorCnt--;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         private void Btn_Accept_Click(object sender, RoutedEventArgs e)
         {
-            if (!Tools.ValidateH2(tb_h1.Text, Units, out double h1))
-                Tools.ValidationError(tb_h1);
-            else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h1;
-
-                this.DialogResult = true;
-                this.Close();
-            }
+            this.DialogResult = true;
+            this.Close();
         }
 
         private void Btn_Cancel_Click(object sender, RoutedEventArgs e)

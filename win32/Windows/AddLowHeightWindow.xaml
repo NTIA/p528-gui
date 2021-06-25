@@ -4,20 +4,46 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:p528_gui.Windows"
+        xmlns:vr="clr-namespace:p528_gui.ValidationRules"
         mc:Ignorable="d"
         Title="Add Low Height..." SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/CommonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    
     <DockPanel LastChildFill="True" Margin="3">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="3">
-            <Button Name="btn_Accept" Content="Accept" Width="75" Click="Btn_Accept_Click" Margin="3"/>
-            <Button Name="btn_Cancel" Content="Cancel" Width="75" Click="Btn_Cancel_Click" Margin="3"/>
+            <Button Content="Accept" Width="75" Click="Btn_Accept_Click"
+                    IsEnabled="{Binding Path=ErrorCnt, Converter={StaticResource integerConverter}}"/>
+            <Button Content="Cancel" Width="75" Click="Btn_Cancel_Click"/>
         </StackPanel>
+        
         <Grid Margin="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
+            
             <TextBlock Name="tb_t1" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
-            <TextBox Grid.Column="1" Width="150" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1"/>
+            <TextBox Grid.Column="1" Width="150"  Validation.Error="TextBox_Error">
+                <TextBox.Text>
+                    <Binding Path="h_1"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="10">
+                        <Binding.ValidationRules>
+                            <vr:TerminalHeightValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
         </Grid>
     </DockPanel>
 </Window>
