@@ -12,6 +12,7 @@
         Loaded="Window_Loaded">
     <Window.Resources>
         <RoutedCommand x:Key="PlotModeCommand"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
     <Window.CommandBindings>
         <CommandBinding Command="{StaticResource PlotModeCommand}" Executed="Command_PlotMode" x:Name="PlotModeCommand"/>
@@ -69,6 +70,23 @@
         </Menu>
 
         <oxy:PlotView Grid.Row="1" Name="plot" Model="{Binding PlotModel}" Margin="3,3,20,3"/>
+        <Grid Grid.Row="1" Name="grid_Working" Visibility="{Binding IsWorking, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid Background="Gray" Opacity="0.5"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                    <TextBlock Text="Generating Data..." HorizontalAlignment="Center"/>
+                    <ProgressBar Name="progressBar" Height="15" Margin="3" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}"/>
+                    <Button Content="Cancel" Width="75" Click="Btn_CancelWork_Click"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
 
         <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical">

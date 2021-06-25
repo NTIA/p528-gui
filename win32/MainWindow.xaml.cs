@@ -104,7 +104,20 @@ namespace p528_gui
         readonly LinearAxis _xAxis;
         readonly LinearAxis _yAxis;
 
+        BackgroundWorker _worker;
+
         public bool IsFreeSpaceLineVisible { get; set; } = true;
+
+        private int _progressPercentage { get; set; } = 0;
+        public int ProgressPercentage
+        {
+            get { return _progressPercentage; }
+            set
+            {
+                _progressPercentage = value;
+                OnPropertyChanged();
+            }
+        }
 
         private bool _isWorking { get; set; } = false;
         public bool IsWorking
@@ -167,6 +180,13 @@ namespace p528_gui
             _isWorkingBinding.Source = this;
             _isWorkingBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             _isWorkingBinding.Converter = new BooleanInverterConverter();
+
+
+            _worker = new BackgroundWorker();
+            _worker.DoWork += Worker_RunP528;
+            _worker.WorkerReportsProgress = true;
+            _worker.ProgressChanged += Worker_ProgressChanged;
+            _worker.WorkerSupportsCancellation = true;
         }
 
         private void InitializeLineSeries()
@@ -237,6 +257,8 @@ namespace p528_gui
 
         OxyColor ConvertBrushToOxyColor(Brush brush) => OxyColor.Parse(((SolidColorBrush)brush).Color.ToString());
 
+        #region Render Methods (Prep Background Worker)
+
         private void RenderSingleCurve()
         {
             var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
@@ -248,25 +270,207 @@ namespace p528_gui
             var h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
 
             // generate list of jobs - only single curve so just 1 job
-            var jobs = new List<ModelArgs>();
-            jobs.Add(new ModelArgs()
+            var jobs = new List<ModelArgs>()
             {
-                h_1__meter = h_1__meter,
-                h_2__meter = h_2__meter,
-                f__mhz = inputControl.f__mhz,
-                time = inputControl.time,
-                Polarization = inputControl.Polarization
-            });
+                new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                }
+            };
 
             // start the background worker
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_RunP528;
-            worker.RunWorkerCompleted += Worker_SingleCurveWorkerCompleted;
-            worker.RunWorkerAsync(jobs);
+            _worker.RunWorkerCompleted += Worker_SingleCurveWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
         }
 
+        private void RenderMultipleLowHeights()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
+
+            mi_Export.IsEnabled = true;
+
+            // convert inputs into metric units
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            for (int i = 0; i < inputControl.h_1s.Count; i++)
+            {
+                double h_1 = inputControl.h_1s[i];
+                double h_1__meter = (_units == Units.Meters) ? h_1 : (h_1 * Constants.METER_PER_FOOT);
+
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+            }
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void RenderMultipleHighHeights()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
+
+            mi_Export.IsEnabled = true;
+
+            // convert inputs into metric units
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            for (int i = 0; i < inputControl.h_2s.Count; i++)
+            {
+                double h_2 = inputControl.h_2s[i];
+                double h_2__meter = (_units == Units.Meters) ? h_2 : (h_2 * Constants.METER_PER_FOOT);
+
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+            }
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void RenderMultipleTimes()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
+
+            mi_Export.IsEnabled = true;
+
+            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (var time in inputControl.times)
+            {
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = time,
+                    Polarization = inputControl.Polarization
+                });
+            }
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        #endregion
+
+        #region Background Worker Methods
+
+        /// <summary>
+        /// Main execution code of background worker
+        /// </summary>
+        private void Worker_RunP528(object sender, DoWorkEventArgs e)
+        {
+            // set the UI to reflect work is being done
+            IsWorking = true;
+            _worker.ReportProgress(0);
+
+            // grab the pending jobs
+            var jobs = (List<ModelArgs>)e.Argument;
+
+            // set up List to store job results
+            var jobResults = new List<CurveData>();
+
+            // execute jobs
+            for (int i = 0; i < jobs.Count; i++)
+            {
+                var curveData = new CurveData();
+
+                double d__km, d_out__user_units;
+
+                // iterate on user-specified units (km or n miles)
+                int steps = 500;
+                double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / steps;
+                double d__user_units = _xAxis.Minimum;
+
+                while (d__user_units <= _xAxis.Maximum)
+                {
+                    // convert distance to specified units for input to P.528
+                    d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
+
+                    var rtn = P528.Invoke(d__km, jobs[i].h_1__meter, jobs[i].h_2__meter, jobs[i].f__mhz, 
+                        jobs[i].Polarization, jobs[i].time, out P528.Result result);
+
+                    // convert output distance from P.528 back into user-specified units
+                    d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+
+                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
+                    if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
+                        curveData.Rtn = rtn;
+
+                    // record the result
+                    curveData.Distances.Add(d_out__user_units);
+                    curveData.L_btl__db.Add(result.A__db);
+                    curveData.L_fs__db.Add(result.A_fs__db);
+                    curveData.PropModes.Add(result.ModeOfPropagation);
+
+                    // interate
+                    d__user_units += d_step__user_units;
+
+                    _worker.ReportProgress(Convert.ToInt32(100 * (i + d__user_units / _xAxis.Maximum) / jobs.Count));
+                    if (_worker.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        IsWorking = false;
+                        return;
+                    }
+                }
+
+                jobResults.Add(curveData);
+            }
+
+            e.Cancel = false;
+            e.Result = jobResults;
+
+            IsWorking = false;
+        }
+
+        /// <summary>
+        /// Report on updated progress of background worker
+        /// </summary>
+        private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+            => ProgressPercentage = e.ProgressPercentage;
+
+        /// <summary>
+        /// Single curve mode job is completed
+        /// </summary>
         private void Worker_SingleCurveWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_SingleCurveWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
             // this is a single curve worker, so we can safely call First()
             var curveData = ((List<CurveData>)e.Result).First();
 
@@ -299,7 +503,7 @@ namespace p528_gui
             _losSeries.Points.Add(_dfracSeries.Points.First());
             _dfracSeries.Points.Add(_scatSeries.Points.First());
 
-            // add line series to plot
+            // add all line series to plot
             PlotModel.Series.Add(_losSeries);
             PlotModel.Series.Add(_dfracSeries);
             PlotModel.Series.Add(_scatSeries);
@@ -310,92 +514,18 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        private void Worker_RunP528(object sender, DoWorkEventArgs e)
-        {
-            IsWorking = true;
-
-            var jobs = (List<ModelArgs>)e.Argument;
-
-            var jobResults = new List<CurveData>();
-
-            foreach (var job in jobs)
-            {
-                var curveData = new CurveData();
-
-                double d__km, d_out__user_units;
-
-                // iterate on user-specified units (km or n miles)
-                double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / 500;
-                double d__user_units = _xAxis.Minimum;
-
-                while (d__user_units <= _xAxis.Maximum)
-                {
-                    // convert distance to specified units for input to P.528
-                    d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
-
-                    var rtn = P528.Invoke(d__km, job.h_1__meter, job.h_2__meter, job.f__mhz, job.Polarization, job.time, out P528.Result result);
-
-                    // convert output distance from P.528 back into user-specified units
-                    d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                    if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
-                        curveData.Rtn = rtn;
-
-                    // record the result
-                    curveData.Distances.Add(d_out__user_units);
-                    curveData.L_btl__db.Add(result.A__db);
-                    curveData.L_fs__db.Add(result.A_fs__db);
-                    curveData.PropModes.Add(result.ModeOfPropagation);
-
-                    // interate
-                    d__user_units += d_step__user_units;
-                }
-
-                jobResults.Add(curveData);
-            }
-
-            e.Result = jobResults;
-
-            IsWorking = false;
-        }
-
-        private void RenderMultipleLowHeights()
-        {
-            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
-
-            mi_Export.IsEnabled = true;
-
-            // convert inputs into metric units
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-
-            // create a list of jobs
-            var jobs = new List<ModelArgs>();
-            
-            for (int i = 0; i < inputControl.h_1s.Count; i++)
-            {
-                double h_1 = inputControl.h_1s[i];
-                double h_1__meter = (_units == Units.Meters) ? h_1 : (h_1 * Constants.METER_PER_FOOT);
-
-                jobs.Add(new ModelArgs()
-                {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
-                    f__mhz = inputControl.f__mhz,
-                    time = inputControl.time,
-                    Polarization = inputControl.Polarization
-                });
-            }
-
-            // start the background worker
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_RunP528;
-            worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
-            worker.RunWorkerAsync(jobs);
-        }
-
+        /// <summary>
+        /// Multiple low terminal curves job is completed
+        /// </summary>
         private void Worker_MultipleLowHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleLowHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
             var jobResults = (List<CurveData>)e.Result;
 
             var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
@@ -431,42 +561,18 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        private void RenderMultipleHighHeights()
-        {
-            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
-
-            mi_Export.IsEnabled = true;
-
-            // convert inputs into metric units
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-
-            // create a list of jobs
-            var jobs = new List<ModelArgs>();
-
-            for (int i = 0; i < inputControl.h_2s.Count; i++)
-            {
-                double h_2 = inputControl.h_2s[i];
-                double h_2__meter = (_units == Units.Meters) ? h_2 : (h_2 * Constants.METER_PER_FOOT);
-
-                jobs.Add(new ModelArgs()
-                {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
-                    f__mhz = inputControl.f__mhz,
-                    time = inputControl.time,
-                    Polarization = inputControl.Polarization
-                });
-            }
-
-            // start the background worker
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_RunP528;
-            worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
-            worker.RunWorkerAsync(jobs);
-        }
-
+        /// <summary>
+        /// Multiple high terminal curves job is completed
+        /// </summary>
         private void Worker_MultipleHighHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleHighHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
             var jobResults = (List<CurveData>)e.Result;
 
             var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
@@ -502,39 +608,15 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        private void RenderMultipleTimes()
-        {
-            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
-
-            mi_Export.IsEnabled = true;
-
-            double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-
-            // create a list of jobs
-            var jobs = new List<ModelArgs>();
-
-            foreach (var time in inputControl.times)
-            {
-                jobs.Add(new ModelArgs()
-                {
-                    h_1__meter = h_1__meter,
-                    h_2__meter = h_2__meter,
-                    f__mhz = inputControl.f__mhz,
-                    time = time,
-                    Polarization = inputControl.Polarization
-                });
-            }
-
-            // start the background worker
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += Worker_RunP528;
-            worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
-            worker.RunWorkerAsync(jobs);
-        }
-
         private void Worker_MultipleTimesWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleHighHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
             var jobResults = (List<CurveData>)e.Result;
 
             var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
@@ -576,7 +658,7 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
-        
+        #endregion
 
         #region CSV Export Methods
 
@@ -1010,8 +1092,6 @@ namespace p528_gui
 
         #endregion
 
-        
-
         #region Menu Event Handlers
 
         /// <summary>
@@ -1069,15 +1149,18 @@ namespace p528_gui
 
         private void SetUnits()
         {
-            //// Update text
-            //(grid_Controls.Children[0] as IUnitEnabled).Units = _units;
-            //_xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
-            //ResetPlot();
-            ////customToolTip.Units = _units;
+            if (grid_InputControls.Children.Count > 0)
+            {
+                // Update text
+                (grid_InputControls.Children[0] as IUnitEnabled).Units = _units;
+                _xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
+                ResetPlot();
+                //customToolTip.Units = _units;
+            }
 
-            //// Clear plot data
-            //PlotModel.Series.Clear();
-            //plot.InvalidatePlot();
+            // Clear plot data
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
@@ -1120,7 +1203,7 @@ namespace p528_gui
             _yAxis.Minimum = 100;
             //ySeparator.Step = 20;
 
-            Render?.Invoke();
+            ResetPlotData();
         }
 
         private void ResetPlotData()
@@ -1228,5 +1311,7 @@ namespace p528_gui
             var command = PlotModeCommand.Command;
             command.Execute(PlotMode.Single);
         }
+
+        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e) => _worker.CancelAsync();
     }
 }
