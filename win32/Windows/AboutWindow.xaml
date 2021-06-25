@@ -7,14 +7,17 @@
         mc:Ignorable="d"
         Title="About..." SizeToContent="WidthAndHeight" WindowStyle="ToolWindow" WindowStartupLocation="CenterScreen">
     <Window.Resources>
-        <Style TargetType="TextBlock" x:Name="TextFormat">
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/CommonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
-    <Grid VerticalAlignment="Top" Margin="3">
+    
+    <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
             <RowDefinition/>
             <RowDefinition/>
             <RowDefinition/>
@@ -48,5 +51,12 @@
         </TextBlock>
 
         <Image Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Source="..\img\logo.png" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" 
+                   Text="ITS: The Nation's Spectrum and Communications Lab" 
+                   HorizontalAlignment="Center" 
+                   FontWeight="Bold"
+                   Foreground="DarkBlue" 
+                   FontStyle="Italic"
+                   Visibility="Visible"/>
     </Grid>
 </Window>

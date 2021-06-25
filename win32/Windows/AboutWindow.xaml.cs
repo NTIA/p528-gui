@@ -1,21 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace p528_gui.Windows
 {
@@ -28,14 +15,14 @@ namespace p528_gui.Windows
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             tb_AppVersion.Text = $"{version.Major}.{version.Minor}.{version.Build}";
 
-            var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            var dll = FileVersionInfo.GetVersionInfo("p528_x86.dll");
             tb_DllVersionText.Text = $"P.528-{dll.FileMajorPart} DLL Version:";
             tb_DllVersion.Text = $"{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}";
 
-            if (CheckForUpdate(out int major, out int minor) &&
-                ((major > dll.FileMajorPart ||
-                  major == dll.FileMajorPart && minor > dll.FileMinorPart)))
-                
+            if (CheckForUpdate(out int major, out int minor, out int build) &&
+                (major > version.Major ||
+                 major == version.Major && minor > version.Minor ||
+                 major == version.Major && minor == version.Minor && build > version.Build))
                     tb_NewVersion.Visibility = Visibility.Visible;
         }
 
@@ -45,7 +32,7 @@ namespace p528_gui.Windows
             e.Handled = true;
         }
 
-        private bool CheckForUpdate(out int major, out int minor)
+        private bool CheckForUpdate(out int major, out int minor, out int build)
         {
             try
             {
@@ -61,8 +48,10 @@ namespace p528_gui.Windows
                 var index_start = responseBody.IndexOf("tag_name");
                 var index_end = responseBody.IndexOf(",", index_start);
                 var version = responseBody.Substring(index_start, index_end - index_start).Replace(@"""", "").Split(':')[1];
+
                 major = Convert.ToInt32(version.Split('.')[0].Replace("v", ""));
                 minor = Convert.ToInt32(version.Split('.')[1]);
+                build = Convert.ToInt32(version.Split('.')[2]);
 
                 return true;
             }
@@ -73,6 +62,8 @@ namespace p528_gui.Windows
 
             major = -1;
             minor = -1;
+            build = -1;
+
             return false;
         }
     }
