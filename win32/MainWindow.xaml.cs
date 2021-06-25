@@ -59,6 +59,19 @@ namespace p528_gui
 
     #endregion
 
+    class CurveData
+    {
+        public int Rtn { get; set; } = 0;
+
+        public List<double> Distances { get; set; } = new List<double>();
+
+        public List<double> L_fs__db { get; set; } = new List<double>();
+
+        public List<double> L_btl__db { get; set; } = new List<double>();
+
+        public List<P528.ModeOfPropagation> PropModes { get; set; } = new List<P528.ModeOfPropagation>();
+    }
+
     public partial class MainWindow : Window
     {
         private const int ERROR_HEIGHT_AND_DISTANCE = 10;
@@ -132,12 +145,12 @@ namespace p528_gui
             double time = inputConrol.time;
             var polarization = inputConrol.Polarization;
 
-            int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, polarization, out List<Point>btgPoints, 
-                out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+            // generate the plot data
+            var curveData = GetPointsEx(h1__meter, h2__meter, f__mhz, time, polarization);
 
             // Set any warning messages
-            tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
-            tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
+            tb_ConsistencyWarning.Visibility = ((curveData.Rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
+            tb_FrequencyWarning.Visibility = ((curveData.Rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
 
             // Plot the data
             PlotModel.Series.Clear();
@@ -148,39 +161,59 @@ namespace p528_gui
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
+                    LineStyle = LineStyle.Solid,
                     Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
                     Title = "Line of Sight",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                losSeries.Points.AddRange(losPoints.Select(x => new DataPoint(x.X, x.Y)));
-                PlotModel.Series.Add(losSeries);
 
                 var dfracSeries = new LineSeries()
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
+                    LineStyle = LineStyle.Solid,
                     Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2")),
                     Title = "Diffraction",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                dfracSeries.Points.AddRange(dfracPoints.Select(x => new DataPoint(x.X, x.Y)));
-                PlotModel.Series.Add(dfracSeries);
 
                 var scatSeries = new LineSeries()
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
+                    LineStyle = LineStyle.Solid,
                     Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00")),
-                    Title = "Diffraction",
+                    Title = "Troposcatter",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                scatSeries.Points.AddRange(scatPoints.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build lines
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                {
+                    switch (curveData.PropModes[i])
+                    {
+                        case P528.ModeOfPropagation.LineOfSight:
+                            losSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                            break;
+                        case P528.ModeOfPropagation.Diffraction:
+                            dfracSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                            break;
+                        case P528.ModeOfPropagation.Troposcatter:
+                            scatSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                            break;
+                    }
+                }
+
+                // fill in the gaps between line segments to make continuous
+                losSeries.Points.Add(dfracSeries.Points.First());
+                dfracSeries.Points.Add(scatSeries.Points.First());
+
+                // add to plot
+                PlotModel.Series.Add(losSeries);
+                PlotModel.Series.Add(dfracSeries);
                 PlotModel.Series.Add(scatSeries);
             }
             else
@@ -189,33 +222,43 @@ namespace p528_gui
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
+                    LineStyle = LineStyle.Solid,
                     Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
-                    Title = "Basic Transmission Gain",
+                    Title = "Basic Transmission Loss",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                series.Points.AddRange(btgPoints.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build line
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+
+                // add to plot
                 PlotModel.Series.Add(series);
             }
 
             if (_showFreeSpaceLine)
             {
-                // TODO: make dotted line
                 var fsSeries = new LineSeries()
                 {
                     StrokeThickness = 1,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
+                    LineStyle = LineStyle.Dot,
                     Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
                     Title = "Free Space",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build line
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                    fsSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_fs__db[i]));
+
+                // add to plot
                 PlotModel.Series.Add(fsSeries);
             }
 
+            // redraw the plot
             plot.InvalidatePlot();
         }
 
@@ -334,25 +377,25 @@ namespace p528_gui
                 PlotModel.Series.Add(series);
             }
 
-            if (_showFreeSpaceLine)
-            {
-                GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, polarization, out List <Point> btgPoints, 
-                    out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+            //if (_showFreeSpaceLine)
+            //{
+            //    GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, polarization, out List <Point> btgPoints, 
+            //        out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
 
-                // TODO: make dotted line
-                var fsSeries = new LineSeries()
-                {
-                    StrokeThickness = 1,
-                    MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
-                    Title = "Free Space",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-                fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
-                PlotModel.Series.Add(fsSeries);
-            }
+            //    // TODO: make dotted line
+            //    var fsSeries = new LineSeries()
+            //    {
+            //        StrokeThickness = 1,
+            //        MarkerSize = 0,
+            //        LineStyle = OxyPlot.LineStyle.Solid,
+            //        Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+            //        Title = "Free Space",
+            //        MarkerType = MarkerType.None,
+            //        CanTrackerInterpolatePoints = false
+            //    };
+            //    fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
+            //    PlotModel.Series.Add(fsSeries);
+            //}
 
             plot.InvalidatePlot();
         }
@@ -390,69 +433,42 @@ namespace p528_gui
             return rtn;
         }
 
-        private int GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, double time, P528.Polarization polarization,
-            out List<Point> btgPoints, out List<Point> losPoints, out List<Point> dfracPoints, 
-            out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
+        private CurveData GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, 
+            double time, P528.Polarization polarization)
         {
-            losPoints = new List<Point>();
-            dfracPoints = new List<Point>();
-            scatPoints = new List<Point>();
-            fsPoints = new List<Point>();
-            btgPoints = new List<Point>();
+            var curveData = new CurveData();
 
-            bool dfracSwitch = false;
-            bool scatSwitch = false;
-
-            int rtn = 0;
-            double d__km, d_out;
+            double d__km, d_out__user_units;
 
             // iterate on user-specified units (km or n miles)
-            double d_step = (_xAxis.Maximum - _xAxis.Minimum) / 1500;
-            double d = _xAxis.Minimum;
-            while (d <= _xAxis.Maximum)
+            double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / 500;
+            double d__user_units = _xAxis.Minimum;
+
+            while (d__user_units <= _xAxis.Maximum)
             {
                 // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
+                d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
 
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
+                var rtn = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
 
                 // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+                d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
 
                 // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                    rtn = r;
+                if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
+                    curveData.Rtn = rtn;
 
-                switch (result.ModeOfPropagation)
-                {
-                    case P528.ModeOfPropagation.LineOfSight: // Line-of-Sight
-                        losPoints.Add(new Point(d_out, result.A__db));
-                        break;
-                    case P528.ModeOfPropagation.Diffraction: // Diffraction
-                        if (blendLines && !dfracSwitch)
-                        {
-                            losPoints.Add(new Point(d_out, result.A__db));   // Adding to ensure there is no gap in the curve
-                            dfracSwitch = true;
-                        }
-                        dfracPoints.Add(new Point(d_out, result.A__db));
-                        break;
-                    case P528.ModeOfPropagation.Troposcatter: // Troposcatter
-                        if (blendLines && !scatSwitch)
-                        {
-                            dfracPoints.Add(new Point(d_out, result.A__db)); // Adding to ensure there is no gap in the curve
-                            scatSwitch = true;
-                        }
-                        scatPoints.Add(new Point(d_out, result.A__db));
-                        break;
-                }
+                // record the result
+                curveData.Distances.Add(d_out__user_units);
+                curveData.L_btl__db.Add(result.A__db);
+                curveData.L_fs__db.Add(result.A_fs__db);
+                curveData.PropModes.Add(result.ModeOfPropagation);
 
-                fsPoints.Add(new Point(d_out, result.A_fs__db));
-                btgPoints.Add(new Point(d_out, result.A__db));
-
-                d += d_step;
+                // interate
+                d__user_units += d_step__user_units;
             }
 
-            return rtn;
+            return curveData;
         }
 
         private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
