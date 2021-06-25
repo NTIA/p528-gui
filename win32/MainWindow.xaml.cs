@@ -1275,6 +1275,7 @@ namespace p528_gui
             // force update the view
             PlotModel.Series.Clear();
             plot.InvalidatePlot();
+            GlobalState.Units = GlobalState.Units;
             //ActivePlot = false;
         }
 

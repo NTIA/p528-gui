@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace p528_gui.Windows
 {
@@ -22,21 +11,9 @@ namespace p528_gui.Windows
 
         private int _errorCnt = 0;
 
-        private Units _units;
-
         #endregion
 
         #region Public Properties
-
-        public Units Units
-        {
-            get { return _units; }
-            set
-            {
-                _units = value;
-                tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-            }
-        }
 
         /// <summary>
         /// High terminal height, in user define units
@@ -64,10 +41,12 @@ namespace p528_gui.Windows
         {
             InitializeComponent();
 
+            tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+
             DataContext = this;
         }
 
-        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
+            private void TextBox_Error(object sender, ValidationErrorEventArgs e)
         {
             if (e.Action == ValidationErrorEventAction.Added)
                 ErrorCnt++;
