@@ -31,7 +31,7 @@
             <TextBlock Grid.Column="0" Text="Time Percentage (%):"/>
             <TextBox Grid.Column="1" Width="150" Validation.Error="TextBox_Error">
                 <TextBox.Text>
-                    <Binding Path="h_2"
+                    <Binding Path="time"
                          UpdateSourceTrigger="PropertyChanged"
                          ValidatesOnDataErrors="True"
                          NotifyOnValidationError="True"

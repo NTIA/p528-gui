@@ -25,6 +25,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ITS.Propagation;
 using p528_gui.Converters;
+using System.ComponentModel;
 
 namespace p528_gui
 {
@@ -58,6 +59,19 @@ namespace p528_gui
     }
 
     #endregion
+
+    class ModelArgs
+    {
+        public double h_1__meter { get; set; }
+
+        public double h_2__meter { get; set; }
+
+        public double time { get; set; }
+
+        public P528.Polarization Polarization { get; set; }
+
+        public double f__mhz { get; set; }
+    }
 
     class CurveData
     {
@@ -121,7 +135,6 @@ namespace p528_gui
             DataContext = this;
 
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
-            tb_FrequencyWarning.Text = Messages.LowFrequencyWarning;
 
             SetUnits();
 
@@ -134,23 +147,38 @@ namespace p528_gui
 
         private void RenderSingleCurve()
         {
-            var inputConrol = grid_InputControls.Children[0] as SingleCurveInputsControl;
+            var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
 
             mi_Export.IsEnabled = true;
 
             // convert inputs into metric units
-            var h1__meter = (_units == Units.Meters) ? inputConrol.h_1 : (inputConrol.h_1 * Constants.METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? inputConrol.h_2 : (inputConrol.h_2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputConrol.f__mhz;
-            double time = inputConrol.time;
-            var polarization = inputConrol.Polarization;
+            var h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
+            var h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
 
-            // generate the plot data
-            var curveData = GetPointsEx(h1__meter, h2__meter, f__mhz, time, polarization);
+            // generate list of jobs
+            var jobs = new List<ModelArgs>();
+            jobs.Add(new ModelArgs()
+            {
+                h_1__meter = h_1__meter,
+                h_2__meter = h_2__meter,
+                f__mhz = inputControl.f__mhz,
+                time = inputControl.time,
+                Polarization = inputControl.Polarization
+            });
+
+            // start the background worker
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Worker_RunP528;
+            worker.RunWorkerCompleted += Worker_SingleCurveWorkerCompleted;
+            worker.RunWorkerAsync(jobs);
+        }
+
+        private void Worker_SingleCurveWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            var curveData = ((List<CurveData>)e.Result).First();
 
             // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((curveData.Rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
-            tb_FrequencyWarning.Visibility = ((curveData.Rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
 
             // Plot the data
             PlotModel.Series.Clear();
@@ -262,42 +290,121 @@ namespace p528_gui
             plot.InvalidatePlot();
         }
 
+        private void Worker_RunP528(object sender, DoWorkEventArgs e)
+        {
+            var jobs = (List<ModelArgs>)e.Argument;
+
+            var jobResults = new List<CurveData>();
+
+            foreach (var job in jobs)
+            {
+                var curveData = new CurveData();
+
+                double d__km, d_out__user_units;
+
+                // iterate on user-specified units (km or n miles)
+                double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / 500;
+                double d__user_units = _xAxis.Minimum;
+
+                while (d__user_units <= _xAxis.Maximum)
+                {
+                    // convert distance to specified units for input to P.528
+                    d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
+
+                    var rtn = P528.Invoke(d__km, job.h_1__meter, job.h_2__meter, job.f__mhz, job.Polarization, job.time, out P528.Result result);
+
+                    // convert output distance from P.528 back into user-specified units
+                    d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
+
+                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
+                    if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
+                        curveData.Rtn = rtn;
+
+                    // record the result
+                    curveData.Distances.Add(d_out__user_units);
+                    curveData.L_btl__db.Add(result.A__db);
+                    curveData.L_fs__db.Add(result.A_fs__db);
+                    curveData.PropModes.Add(result.ModeOfPropagation);
+
+                    // interate
+                    d__user_units += d_step__user_units;
+                }
+
+                jobResults.Add(curveData);
+            }
+
+            e.Result = jobResults;
+        }
+
         private void RenderMultipleLowHeights()
         {
             var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
-
-            PlotModel.Series.Clear();
-
             // convert inputs into metric units
             double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-            List<double> h_1s__meter = new List<double>();
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+            
             for (int i = 0; i < inputControl.h_1s.Count; i++)
             {
-                double h1 = inputControl.h_1s[i];
-                double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
+                double h_1 = inputControl.h_1s[i];
+                double h_1__meter = (_units == Units.Meters) ? h_1 : (h_1 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
-                    inputControl.Polarization, out List<Point> pts);
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+            }
 
+            // start the background worker
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Worker_RunP528;
+            worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
+            worker.RunWorkerAsync(jobs);
+        }
+
+        private void Worker_MultipleLowHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
+
+            // Plot the data
+            PlotModel.Series.Clear();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
                 // Plot the data
                 var series = new LineSeries()
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
                     LineStyle = OxyPlot.LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
-                    Title = $"{h1} {_units.ToString()}",
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.h_1s[j]} {_units.ToString()}",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build line
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+
+                // add to plot
                 PlotModel.Series.Add(series);
+
+                j++;
             }
 
+            // redraw the plot
             plot.InvalidatePlot();
         }
 
@@ -307,36 +414,69 @@ namespace p528_gui
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
-
-            PlotModel.Series.Clear();
-
             // convert inputs into metric units
             double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
-            List<double> h_2s__meter = new List<double>();
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
             for (int i = 0; i < inputControl.h_2s.Count; i++)
             {
-                double h2 = inputControl.h_2s[i];
-                double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
+                double h_2 = inputControl.h_2s[i];
+                double h_2__meter = (_units == Units.Meters) ? h_2 : (h_2 * Constants.METER_PER_FOOT);
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.f__mhz, inputControl.time, 
-                    inputControl.Polarization, out List<Point> pts);
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+            }
 
+            // start the background worker
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Worker_RunP528;
+            worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
+            worker.RunWorkerAsync(jobs);
+        }
+
+        private void Worker_MultipleHighHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
+
+            // Plot the data
+            PlotModel.Series.Clear();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
                 // Plot the data
                 var series = new LineSeries()
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
-                    Title = $"{h2} {_units.ToString()}",
+                    LineStyle = LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.h_2s[j]} {_units.ToString()}",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build line
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+
+                // add to plot
                 PlotModel.Series.Add(series);
+
+                j++;
             }
 
+            // redraw the plot
             plot.InvalidatePlot();
         }
 
@@ -346,129 +486,88 @@ namespace p528_gui
 
             mi_Export.IsEnabled = true;
 
-            tb_FrequencyWarning.Visibility = (inputControl.f__mhz < 125) ? Visibility.Visible : Visibility.Collapsed;
-
-            PlotModel.Series.Clear();
-
-            double f__mhz = inputControl.f__mhz;
             double h_1__meter = (_units == Units.Meters) ? inputControl.h_1 : (inputControl.h_1 * Constants.METER_PER_FOOT);
             double h_2__meter = (_units == Units.Meters) ? inputControl.h_2 : (inputControl.h_2 * Constants.METER_PER_FOOT);
-            var polarization = inputControl.Polarization;
 
-            List<double> times = new List<double>();
-            for (int i = 0; i < inputControl.times.Count; i++)
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (var time in inputControl.times)
             {
-                double time = inputControl.times[i];
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__meter = h_1__meter,
+                    h_2__meter = h_2__meter,
+                    f__mhz = inputControl.f__mhz,
+                    time = time,
+                    Polarization = inputControl.Polarization
+                });
+            }
 
-                int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, polarization, out List<Point> pts);
+            // start the background worker
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += Worker_RunP528;
+            worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
+            worker.RunWorkerAsync(jobs);
+        }
 
+        private void Worker_MultipleTimesWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
+
+            // Plot the data
+            PlotModel.Series.Clear();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
                 // Plot the data
                 var series = new LineSeries()
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = OxyPlot.LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor(Tools.GetBrush(i)),
-                    Title = $"{time * 100}%",
+                    LineStyle = LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.times[j]}%",
                     MarkerType = MarkerType.None,
                     CanTrackerInterpolatePoints = false
                 };
-                series.Points.AddRange(pts.Select(x => new DataPoint(x.X, x.Y)));
+
+                // build line
+                for (int i = 0; i < curveData.Distances.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+
+                // add to plot
                 PlotModel.Series.Add(series);
+
+                j++;
             }
 
-            //if (_showFreeSpaceLine)
-            //{
-            //    GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, polarization, out List <Point> btgPoints, 
-            //        out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
+            if (_showFreeSpaceLine)
+            {
+                var fsSeries = new LineSeries()
+                {
+                    StrokeThickness = 1,
+                    MarkerSize = 0,
+                    LineStyle = LineStyle.Dot,
+                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+                    Title = "Free Space",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
 
-            //    // TODO: make dotted line
-            //    var fsSeries = new LineSeries()
-            //    {
-            //        StrokeThickness = 1,
-            //        MarkerSize = 0,
-            //        LineStyle = OxyPlot.LineStyle.Solid,
-            //        Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
-            //        Title = "Free Space",
-            //        MarkerType = MarkerType.None,
-            //        CanTrackerInterpolatePoints = false
-            //    };
-            //    fsSeries.Points.AddRange(fsPoints.Select(x => new DataPoint(x.X, x.Y)));
-            //    PlotModel.Series.Add(fsSeries);
-            //}
+                // build line
+                for (int i = 0; i < jobResults[0].Distances.Count; i++)
+                    fsSeries.Points.Add(new DataPoint(jobResults[0].Distances[i], jobResults[0].L_fs__db[i]));
 
+                // add to plot
+                PlotModel.Series.Add(fsSeries);
+            }
+
+            // redraw the plot
             plot.InvalidatePlot();
-        }
-
-        private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, 
-            P528.Polarization polarization, out List<Point> lossPoints)
-        {
-            lossPoints = new List<Point>();
-
-            int rtn = 0;
-
-            // iterate on user-specified units (km or n miles)
-            double d_step = (_xAxis.Maximum - _xAxis.Minimum) / 1500;
-            double d = _xAxis.Minimum;
-            double d__km, d_out;
-            while (d <= _xAxis.Maximum)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                var r = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
-
-                // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                    rtn = r;
-
-                lossPoints.Add(new Point(d_out, result.A__db));
-
-                d += d_step;
-            }
-
-            return rtn;
-        }
-
-        private CurveData GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, 
-            double time, P528.Polarization polarization)
-        {
-            var curveData = new CurveData();
-
-            double d__km, d_out__user_units;
-
-            // iterate on user-specified units (km or n miles)
-            double d_step__user_units = (_xAxis.Maximum - _xAxis.Minimum) / 500;
-            double d__user_units = _xAxis.Minimum;
-
-            while (d__user_units <= _xAxis.Maximum)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d__user_units : (d__user_units * Constants.KM_PER_NAUTICAL_MILE);
-
-                var rtn = P528.Invoke(d__km, h_1__meter, h_2__meter, f__mhz, polarization, time, out P528.Result result);
-
-                // convert output distance from P.528 back into user-specified units
-                d_out__user_units = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (rtn != ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
-                    curveData.Rtn = rtn;
-
-                // record the result
-                curveData.Distances.Add(d_out__user_units);
-                curveData.L_btl__db.Add(result.A__db);
-                curveData.L_fs__db.Add(result.A_fs__db);
-                curveData.PropModes.Add(result.ModeOfPropagation);
-
-                // interate
-                d__user_units += d_step__user_units;
-            }
-
-            return curveData;
         }
 
         private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
@@ -558,8 +657,6 @@ namespace p528_gui
 
                     if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
                         fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
                 }
 
                 fs.WriteLine();
@@ -667,8 +764,6 @@ namespace p528_gui
 
                     if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
                         fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
                 }
 
                 fs.WriteLine();
@@ -771,8 +866,6 @@ namespace p528_gui
 
                     if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
                         fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
                 }
 
                 fs.WriteLine();
@@ -873,8 +966,6 @@ namespace p528_gui
 
                     if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
                         fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
                 }
 
                 fs.WriteLine();

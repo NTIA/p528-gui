@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace p528_gui
+﻿namespace p528_gui
 {
     static class Messages
     {
         // warning text
         public const string ModelConsistencyWarning = "Note: The P.528 model has returned a warning that the transition between diffraction and troposcatter might not be physically consistent.  Care should be taken when using the results.";
-        public const string LowFrequencyWarning = "Note: The entered frequency is less than the lower limit specified in P.528-4.  Care should be taken when using the results.";
 
         public const string TerminalHeightWarning = "Note: Although valid, the entered value is above the reference atmosphere which stops at 475 km above sea level";
 
