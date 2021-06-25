@@ -90,24 +90,26 @@ namespace p528_gui
     {
         private const int ERROR_HEIGHT_AND_DISTANCE = 10;
         private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
-        private const int WARNING__LOW_FREQUENCY = 0xFF2;
 
         public PlotModel PlotModel { get; set; }
 
-        private const int LOS_SERIES = 0;
-        private const int DFRAC_SERIES = 1;
-        private const int SCAT_SERIES = 2;
-        private const int FS_SERIES = 3;
-
         private Units _units = Units.Meters;
-        private bool _showModeOfProp = true;
-        private bool _showFreeSpaceLine = true;
+
+        public bool IsModeOfPropVisible { get; set; } = true;
 
         private delegate void RenderPlot();
         private RenderPlot Render;
 
         readonly LinearAxis _xAxis;
         readonly LinearAxis _yAxis;
+
+        public bool IsFreeSpaceLineVisible { get; set; } = true;
+
+        LineSeries _fsSeries;
+        LineSeries _btlSeries;
+        LineSeries _losSeries;
+        LineSeries _dfracSeries;
+        LineSeries _scatSeries;
 
         public MainWindow()
         {
@@ -119,12 +121,12 @@ namespace p528_gui
             _xAxis.Title = "Distance (km)";
             _xAxis.Minimum = 0;
             _xAxis.Maximum = 1800;
-            _xAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _xAxis.MajorGridlineStyle = LineStyle.Dot;
             _xAxis.Position = AxisPosition.Bottom;
 
             _yAxis = new LinearAxis();
             _yAxis.Title = "Basic Transmission Loss (dB)";
-            _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _yAxis.MajorGridlineStyle = LineStyle.Dot;
             _yAxis.Position = AxisPosition.Left;
             _yAxis.StartPosition = 1;
             _yAxis.EndPosition = 0;
@@ -139,6 +141,72 @@ namespace p528_gui
             SetUnits();
 
             Render = RenderSingleCurve;
+
+            InitializeLineSeries();
+        }
+
+        private void InitializeLineSeries()
+        {
+            // set up free space loss line and bind it to boolean
+            _fsSeries = new LineSeries()
+            {
+                StrokeThickness = 1,
+                MarkerSize = 0,
+                LineStyle = LineStyle.Dot,
+                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+                Title = "Free Space",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsFreeSpaceLineVisible
+            };
+
+            _btlSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = LineStyle.Solid,
+                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
+                Title = "Basic Transmission Loss",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = !IsModeOfPropVisible
+            };
+
+            _losSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = LineStyle.Solid,
+                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
+                Title = "Line of Sight",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropVisible
+            };
+
+            _dfracSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = LineStyle.Solid,
+                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2")),
+                Title = "Diffraction",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropVisible
+            };
+
+            _scatSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = LineStyle.Solid,
+                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00")),
+                Title = "Troposcatter",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropVisible
+            };
         }
 
         private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
@@ -175,116 +243,52 @@ namespace p528_gui
 
         private void Worker_SingleCurveWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            // this is a single curve worker, so we can safely call First()
             var curveData = ((List<CurveData>)e.Result).First();
 
             // Set any warning messages
             tb_ConsistencyWarning.Visibility = ((curveData.Rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
 
-            // Plot the data
+            // clear the plot of any data series
             PlotModel.Series.Clear();
 
-            if (_showModeOfProp)
+            // clear lines series of data points
+            _losSeries.Points.Clear();
+            _dfracSeries.Points.Clear();
+            _scatSeries.Points.Clear();
+            _btlSeries.Points.Clear();
+            _fsSeries.Points.Clear();
+
+            // build lines
+            for (int i = 0; i < curveData.Distances.Count; i++)
             {
-                var losSeries = new LineSeries()
+                switch (curveData.PropModes[i])
                 {
-                    StrokeThickness = 5,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
-                    Title = "Line of Sight",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-
-                var dfracSeries = new LineSeries()
-                {
-                    StrokeThickness = 5,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2")),
-                    Title = "Diffraction",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-
-                var scatSeries = new LineSeries()
-                {
-                    StrokeThickness = 5,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00")),
-                    Title = "Troposcatter",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-
-                // build lines
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                {
-                    switch (curveData.PropModes[i])
-                    {
-                        case P528.ModeOfPropagation.LineOfSight:
-                            losSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
-                            break;
-                        case P528.ModeOfPropagation.Diffraction:
-                            dfracSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
-                            break;
-                        case P528.ModeOfPropagation.Troposcatter:
-                            scatSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
-                            break;
-                    }
+                    case P528.ModeOfPropagation.LineOfSight:
+                        _losSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        break;
+                    case P528.ModeOfPropagation.Diffraction:
+                        _dfracSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        break;
+                    case P528.ModeOfPropagation.Troposcatter:
+                        _scatSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        break;
                 }
 
-                // fill in the gaps between line segments to make continuous
-                losSeries.Points.Add(dfracSeries.Points.First());
-                dfracSeries.Points.Add(scatSeries.Points.First());
-
-                // add to plot
-                PlotModel.Series.Add(losSeries);
-                PlotModel.Series.Add(dfracSeries);
-                PlotModel.Series.Add(scatSeries);
-            }
-            else
-            {
-                var series = new LineSeries()
-                {
-                    StrokeThickness = 5,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
-                    Title = "Basic Transmission Loss",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-
-                // build line
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
-
-                // add to plot
-                PlotModel.Series.Add(series);
+                _btlSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                _fsSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_fs__db[i]));
             }
 
-            if (_showFreeSpaceLine)
-            {
-                var fsSeries = new LineSeries()
-                {
-                    StrokeThickness = 1,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Dot,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
-                    Title = "Free Space",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
+            // fill in the gaps between line segments to make continuous
+            _losSeries.Points.Add(_dfracSeries.Points.First());
+            _dfracSeries.Points.Add(_scatSeries.Points.First());
 
-                // build line
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                    fsSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_fs__db[i]));
-
-                // add to plot
-                PlotModel.Series.Add(fsSeries);
-            }
+            // add line series to plot
+            PlotModel.Series.Add(_losSeries);
+            PlotModel.Series.Add(_dfracSeries);
+            PlotModel.Series.Add(_scatSeries);
+            PlotModel.Series.Add(_btlSeries);
+            PlotModel.Series.Add(_fsSeries);
 
             // redraw the plot
             plot.InvalidatePlot();
@@ -545,32 +549,17 @@ namespace p528_gui
                 j++;
             }
 
-            if (_showFreeSpaceLine)
-            {
-                var fsSeries = new LineSeries()
-                {
-                    StrokeThickness = 1,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Dot,
-                    Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
-                    Title = "Free Space",
-                    MarkerType = MarkerType.None,
-                    CanTrackerInterpolatePoints = false
-                };
-
-                // build line
-                for (int i = 0; i < jobResults[0].Distances.Count; i++)
-                    fsSeries.Points.Add(new DataPoint(jobResults[0].Distances[i], jobResults[0].L_fs__db[i]));
-
-                // add to plot
-                PlotModel.Series.Add(fsSeries);
-            }
+            // update free space line
+            _fsSeries.Points.Clear();
+            for (int i = 0; i < jobResults[0].Distances.Count; i++)
+                _fsSeries.Points.Add(new DataPoint(jobResults[0].Distances[i], jobResults[0].L_fs__db[i]));
+            PlotModel.Series.Add(_fsSeries);
 
             // redraw the plot
             plot.InvalidatePlot();
         }
 
-        private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
+        
 
         #region CSV Export Methods
 
@@ -1010,12 +999,36 @@ namespace p528_gui
             aboutWindow.ShowDialog();
         }
 
+        #region Menu Event Handlers
+
+        /// <summary>
+        /// Exit the application
+        /// </summary>
+        private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        /// <summary>
+        /// Update the visibility of the free space transmission loss line
+        /// </summary>
         private void Mi_FreeSpace_Click(object sender, RoutedEventArgs e)
         {
-            _showFreeSpaceLine = mi_FreeSpace.IsChecked;
-
-            Render();
+            _fsSeries.IsVisible = IsFreeSpaceLineVisible;
+            plot.InvalidatePlot();
         }
+
+        /// <summary>
+        /// Update the visibility of the model of propagation data
+        /// </summary>
+        private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
+        {
+            _losSeries.IsVisible = IsModeOfPropVisible;
+            _dfracSeries.IsVisible = IsModeOfPropVisible;
+            _scatSeries.IsVisible = IsModeOfPropVisible;
+            _btlSeries.IsVisible = !IsModeOfPropVisible;
+
+            plot.InvalidatePlot();
+        }
+
+        #endregion
 
         private void Mi_Units_Meters_Click(object sender, RoutedEventArgs e)
         {
@@ -1091,12 +1104,7 @@ namespace p528_gui
             Render?.Invoke();
         }
 
-        private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
-        {
-            _showModeOfProp = mi_ModeOfProp.IsChecked;
-
-            Render();
-        }
+        
 
         /// <summary>
         /// Controls the application mode with respect to the type of plot generated
@@ -1125,7 +1133,7 @@ namespace p528_gui
                     grid_InputControls.Children.Add(singleCurveCtrl);
                     
                     mi_View.Visibility = Visibility.Visible;
-                    mi_ModeOfProp.Visibility = Visibility.Visible;
+                    IsModeOfPropVisible = true;
 
                     Binding binding1 = new Binding("ErrorCnt");
                     binding1.Source = singleCurveCtrl;
@@ -1142,7 +1150,7 @@ namespace p528_gui
                     grid_InputControls.Children.Add(multipleLowCtrl);
 
                     mi_View.Visibility = Visibility.Collapsed;
-                    mi_ModeOfProp.Visibility = Visibility.Visible;
+                    IsModeOfPropVisible = true;
 
                     Binding binding2 = new Binding("ErrorCnt");
                     binding2.Source = multipleLowCtrl;
@@ -1159,7 +1167,7 @@ namespace p528_gui
                     grid_InputControls.Children.Add(multipleHighCtrl);
 
                     mi_View.Visibility = Visibility.Collapsed;
-                    mi_ModeOfProp.Visibility = Visibility.Visible;
+                    IsModeOfPropVisible = true;
 
                     Binding binding3 = new Binding("ErrorCnt");
                     binding3.Source = multipleHighCtrl;
@@ -1176,7 +1184,7 @@ namespace p528_gui
                     grid_InputControls.Children.Add(multipleTimesCtrl);
 
                     mi_View.Visibility = Visibility.Visible;
-                    mi_ModeOfProp.Visibility = Visibility.Collapsed;
+                    IsModeOfPropVisible = false;
 
                     Binding binding4 = new Binding("ErrorCnt");
                     binding4.Source = multipleTimesCtrl;

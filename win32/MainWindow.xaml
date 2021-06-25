@@ -31,8 +31,14 @@
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
             <MenuItem Header="View" Name="mi_View" Visibility="Visible">
-                <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
-                <MenuItem Header="Highlight Mode of Propagation" Name="mi_ModeOfProp" Click="Mi_ModeOfProp_Click" IsCheckable="True" IsChecked="True"/>
+                <MenuItem Header="Free Space Line" 
+                          Click="Mi_FreeSpace_Click"
+                          IsCheckable="True" 
+                          IsChecked="{Binding IsFreeSpaceLineVisible}"/>
+                <MenuItem Header="Highlight Mode of Propagation" 
+                          Click="Mi_ModeOfProp_Click" 
+                          IsCheckable="True" 
+                          IsChecked="{Binding IsModeOfPropVisible}"/>
             </MenuItem>
             <MenuItem Header="Options">
                 <MenuItem Header="Units...">
@@ -63,30 +69,10 @@
         </Menu>
 
         <oxy:PlotView Grid.Row="1" Name="plot" Model="{Binding PlotModel}" Margin="3,3,20,3"/>
-        <!--<lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True" Margin="3">
-            <lvc:CartesianChart.AxisX>
-                <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
-                    <lvc:Axis.Separator>
-                        <lvc:Separator x:Name="xSeparator" Step="200"/>
-                    </lvc:Axis.Separator>
-                </lvc:Axis>
-            </lvc:CartesianChart.AxisX>
-            <lvc:CartesianChart.AxisY>
-                <lvc:Axis Name="yAxis" Title="Basic Transmission Gain (dB)" Foreground="Black" MaxValue="-100" MinValue="-300">
-                    <lvc:Axis.Separator>
-                        <lvc:Separator x:Name="ySeparator" Step="20"/>
-                    </lvc:Axis.Separator>
-                </lvc:Axis>
-            </lvc:CartesianChart.AxisY>
-            <lvc:CartesianChart.DataTooltip>
-                <local:CustomToolTip x:Name="customToolTip" SelectionMode="OnlySender"/>
-            </lvc:CartesianChart.DataTooltip>
-        </lvc:CartesianChart>-->
 
         <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                 <TextBlock Name="tb_ConsistencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
-                <TextBlock Name="tb_FrequencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
             </StackPanel>
 
             <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click" TabIndex="8"/>
