@@ -17,6 +17,8 @@ namespace p528_gui.UserControls
 
         private int _errorCnt = 0;
 
+        private bool _invalidTerminalRelationship = false;
+
         #endregion
 
         #region Public Properties
@@ -162,5 +164,36 @@ namespace p528_gui.UserControls
             => btn_Remove.IsEnabled = lb_h1s.SelectedItems.Count > 0;
 
         #endregion
+
+        private void tb_h2_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // check if terminal height is less than any in listbox
+            if (!Double.TryParse(tb_h2.Text, out double h2))
+                return;
+
+            int cnt = 0;
+            foreach (double h1 in h_1s)
+            {
+                if (h2 < h1)
+                {
+                    if (!_invalidTerminalRelationship)
+                    {
+                        ErrorCnt++;
+                        _invalidTerminalRelationship = true;
+                    }
+
+                    var binding = tb_h2.GetBindingExpression(TextBox.TextProperty);
+                    var error = new ValidationError(new TerminalRelationshipValidation(), binding) { ErrorContent = "Terminal 2 must be greater than or equal to Terminal 1" };
+                    Validation.MarkInvalid(binding, error);
+                }
+                else
+                    cnt++;
+            }
+            if (cnt == h_1s.Count && _invalidTerminalRelationship)
+            {
+                ErrorCnt--;
+                _invalidTerminalRelationship = false;
+            }
+        }
     }
 }
