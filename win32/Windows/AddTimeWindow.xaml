@@ -39,7 +39,7 @@
                          Converter="{StaticResource doubleConverter}"
                          FallbackValue="50">
                         <Binding.ValidationRules>
-                            <vr:TerminalHeightValidation/>
+                            <vr:TimeValidation/>
                         </Binding.ValidationRules>
                     </Binding>
                 </TextBox.Text>
