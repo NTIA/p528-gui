@@ -4,25 +4,32 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:p528_gui"
+        xmlns:vr="clr-namespace:p528_gui.ValidationRules"
         mc:Ignorable="d"
         Title="Set Axis Limits" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
     <Window.Resources>
-        <Style TargetType="TextBlock" x:Name="TextFormat">
-            <Setter Property="Margin" Value="3"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/CommonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
+    
     <DockPanel LastChildFill="True" Margin="3">
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
-            <Button Content="Apply" Name="btn_Apply" Width="75" Margin="3" Click="btn_Apply_Click"/>
-            <Button Content="Cancel" Name="btn_Cancel" Width="75" Margin="3" Click="btn_Cancel_Click"/>
+            <Button Content="Apply" Width="75" Margin="3" Click="btn_Apply_Click"
+                    IsEnabled="{Binding Path=ErrorCnt, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource integerConverter}}"/>
+            <Button Content="Cancel" Width="75" Margin="3" Click="btn_Cancel_Click"/>
         </StackPanel>
-        <Grid VerticalAlignment="Top" Margin="3">
+        <Grid DockPanel.Dock="Top" Margin="3" Validation.Error="TextBox_Error" Name="grid_XAxis">
+            <Grid.BindingGroup>
+                <BindingGroup Name="xaxisBindingGroup" NotifyOnValidationError="True">
+                    <BindingGroup.ValidationRules>
+                        <vr:XAxisLimitsValidation ValidatesOnTargetUpdated="True" ValidationStep="UpdatedValue"/>
+                    </BindingGroup.ValidationRules>
+                </BindingGroup>
+            </Grid.BindingGroup>
             <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
-                <RowDefinition/>
-                <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
                 <RowDefinition/>
@@ -36,25 +43,112 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="x-axis" FontWeight="Bold"/>
+            
             <TextBlock Grid.Row="1" Grid.Column="1" Text="Minimum"/>
-            <TextBox Grid.Row="1" Grid.Column="2" Margin="3" Name="tb_xAxisMinimum"/>
+            <TextBox Grid.Row="1" Grid.Column="2" Validation.Error="TextBox_Error" TextChanged="XAxisTextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="XAxisMinimum"
+                             BindingGroupName="xaxisBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="TwoWay"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="1">
+                        <Binding.ValidationRules>
+                            <vr:MinimumValueValidation MinimumValue="1" IncludeMinimumValue="True"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
             <TextBlock Grid.Row="1" Grid.Column="3" Name="tb_xAxisMinimumUnits" FontStyle="Italic"/>
+            
             <TextBlock Grid.Row="2" Grid.Column="1" Text="Maximum"/>
-            <TextBox Grid.Row="2" Grid.Column="2" Margin="3" Name="tb_xAxisMaximum"/>
+            <TextBox Grid.Row="2" Grid.Column="2" Validation.Error="TextBox_Error" TextChanged="XAxisTextBox_TextChanged" >
+                <TextBox.Text>
+                    <Binding Path="XAxisMaximum"
+                             BindingGroupName="xaxisBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="TwoWay"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="10000">
+                        <Binding.ValidationRules>
+                            <vr:MinimumValueValidation MinimumValue="1" IncludeMinimumValue="True"/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
             <TextBlock Grid.Row="2" Grid.Column="3" Name="tb_xAxisMaximumUnits" FontStyle="Italic"/>
-            <TextBlock Grid.Row="3" Grid.Column="1" Text="Step"/>
-            <TextBox Grid.Row="3" Grid.Column="2" Margin="3" Name="tb_xAxisStep"/>
-            <TextBlock Grid.Row="3" Grid.Column="3" Name="tb_xAxisStepUnits" FontStyle="Italic"/>
-            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Text="y-axis" FontWeight="Bold"/>
-            <TextBlock Grid.Row="5" Grid.Column="1" Text="Minimum"/>
-            <TextBox Grid.Row="5" Grid.Column="2" Margin="3" Name="tb_yAxisMinimum"/>
-            <TextBlock Grid.Row="5" Grid.Column="3" Text="dB" FontStyle="Italic"/>
-            <TextBlock Grid.Row="6" Grid.Column="1" Text="Maximum"/>
-            <TextBox Grid.Row="6" Grid.Column="2" Margin="3" Name="tb_yAxisMaximum"/>
-            <TextBlock Grid.Row="6" Grid.Column="3" Text="dB" FontStyle="Italic"/>
-            <TextBlock Grid.Row="7" Grid.Column="1" Text="Step"/>
-            <TextBox Grid.Row="7" Grid.Column="2" Margin="3" Name="tb_yAxisStep"/>
-            <TextBlock Grid.Row="7" Grid.Column="3" Text="dB" FontStyle="Italic"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" FontSize="12" Foreground="Red"
+                       Text="{Binding Path=(Validation.Errors)[0].ErrorContent, ElementName=grid_XAxis}"/>
+        </Grid>
+
+        <Grid Margin="3" Validation.Error="TextBox_Error" Name="grid_YAxis">
+            <Grid.BindingGroup>
+                <BindingGroup Name="yaxisBindingGroup" NotifyOnValidationError="True">
+                    <BindingGroup.ValidationRules>
+                        <vr:YAxisLimitsValidation ValidatesOnTargetUpdated="True" ValidationStep="UpdatedValue"/>
+                    </BindingGroup.ValidationRules>
+                </BindingGroup>
+            </Grid.BindingGroup>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="75"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="y-axis" FontWeight="Bold"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="Minimum"/>
+            <TextBox Grid.Row="1" Grid.Column="2" Validation.Error="TextBox_Error" TextChanged="YAxisTextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="YAxisMinimum"
+                             BindingGroupName="yaxisBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="TwoWay"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="-2000">
+                        <Binding.ValidationRules>
+                            <vr:DoubleValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+            <TextBlock Grid.Row="1" Grid.Column="3" Name="tb_YAxisMinUnits" FontStyle="Italic"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="Maximum"/>
+            <TextBox Grid.Row="2" Grid.Column="2" Validation.Error="TextBox_Error" TextChanged="YAxisTextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="YAxisMaximum"
+                             BindingGroupName="yaxisBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="TwoWay"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="100">
+                        <Binding.ValidationRules>
+                            <vr:DoubleValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+            <TextBlock Grid.Row="2" Grid.Column="3" Name="tb_YAxisMaxUnits" FontStyle="Italic"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" FontSize="12" Foreground="Red"
+                       Text="{Binding Path=(Validation.Errors)[0].ErrorContent, ElementName=grid_YAxis}"/>
         </Grid>
     </DockPanel>
 </Window>

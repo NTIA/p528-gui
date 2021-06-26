@@ -159,6 +159,8 @@ namespace p528_gui
             _yAxis.Position = AxisPosition.Left;
             _yAxis.StartPosition = 1;
             _yAxis.EndPosition = 0;
+            _yAxis.Minimum = 0;
+            _yAxis.Maximum = 300;
 
             PlotModel.Axes.Add(_xAxis);
             PlotModel.Axes.Add(_yAxis);
@@ -1138,10 +1140,8 @@ namespace p528_gui
                 XAxisUnit = (GlobalState.Units == Units.Meters) ? "km" : "n mile",
                 XAxisMaximum = _xAxis.Maximum,
                 XAxisMinimum = _xAxis.Minimum,
-                //XAxisStep = xSeparator.Step,
                 YAxisMaximum = _yAxis.Maximum,
                 YAxisMinimum = _yAxis.Minimum,
-                //YAxisStep = ySeparator.Step
             };
 
             if (!limitsWndw.ShowDialog().Value)
@@ -1149,11 +1149,11 @@ namespace p528_gui
 
             _xAxis.Maximum = limitsWndw.XAxisMaximum;
             _xAxis.Minimum = limitsWndw.XAxisMinimum;
-            //xSeparator.Step = limitsWndw.XAxisStep;
 
             _yAxis.Maximum = limitsWndw.YAxisMaximum;
             _yAxis.Minimum = limitsWndw.YAxisMinimum;
-            //ySeparator.Step = limitsWndw.YAxisStep;
+
+            plot.InvalidatePlot();
         }
 
         private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlotAxis();
@@ -1166,10 +1166,8 @@ namespace p528_gui
                 _xAxis.Maximum = 970;
 
             _xAxis.Minimum = 0;
-            //xSeparator.Step = 200;
             _yAxis.Maximum = 300;
             _yAxis.Minimum = 100;
-            //ySeparator.Step = 20;
 
             ResetPlotData();
         }
