@@ -119,7 +119,7 @@ namespace p528_gui.UserControls
         /// </summary>
         private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
         {
-            var wndw = new AddHighHeightWindow();
+            var wndw = new AddHighHeightWindow() { h_1 = h_1 };
 
             if (!wndw.ShowDialog().Value)
                 return;

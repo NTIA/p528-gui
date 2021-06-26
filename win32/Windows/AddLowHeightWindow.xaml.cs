@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using p528_gui.ValidationRules;
+using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +12,8 @@ namespace p528_gui.Windows
         #region Private Fields
 
         private int _errorCnt = 0;
+
+        private bool _invalidTerminalRelationship = false;
 
         #endregion
 
@@ -32,6 +36,11 @@ namespace p528_gui.Windows
                 OnPropertyChanged();
             }
         }
+
+        /// <summary>
+        /// High terminal height, in user defined units
+        /// </summary>
+        public double? h_2 { get; set; }
 
         #endregion
 
@@ -67,6 +76,36 @@ namespace p528_gui.Windows
         {
             this.DialogResult = false;
             this.Close();
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!h_2.HasValue)
+                return;
+
+            var tb = sender as TextBox;
+
+            if (!Double.TryParse(tb.Text, out double value))
+                return;
+
+            if (value > h_2)
+            {
+                if (!_invalidTerminalRelationship)
+                {
+                    ErrorCnt++;
+                    _invalidTerminalRelationship = true;
+                }
+
+                var binding = tb.GetBindingExpression(TextBox.TextProperty);
+                var error = new ValidationError(new TerminalRelationshipValidation(), binding) { ErrorContent = "Terminal 1 must be less than or equal to Terminal 2" };
+                Validation.MarkInvalid(binding, error);
+            }
+            else if (value <= h_2 && _invalidTerminalRelationship)
+            {
+                ErrorCnt--;
+                _invalidTerminalRelationship = false;
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
         }
     }
 }
