@@ -145,5 +145,7 @@ namespace p528_gui.UserControls
             btn_Remove.IsEnabled = lb_times.SelectedItems.Count > 0;
 
         #endregion
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e) => grid_Terminals?.BindingGroup.CommitEdit();
     }
 }

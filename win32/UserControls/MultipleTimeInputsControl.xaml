@@ -29,40 +29,63 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):"/>
-        <TextBox Grid.Row="0" Grid.Column="1" TabIndex="1" Validation.Error="TextBox_Error">
-            <TextBox.Text>
-                <Binding Path="h_1"
-                         UpdateSourceTrigger="PropertyChanged"
-                         ValidatesOnDataErrors="True"
-                         NotifyOnValidationError="True"
-                         Mode="OneWayToSource"
-                         Converter="{StaticResource doubleConverter}"
-                         FallbackValue="5">
-                    <Binding.ValidationRules>
-                        <vr:TerminalHeightValidation/>
-                    </Binding.ValidationRules>
-                </Binding>
-            </TextBox.Text>
-        </TextBox>
-        
-        <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):"/>
-        <TextBox Grid.Row="1" Grid.Column="1" TabIndex="2" Validation.Error="TextBox_Error">
-            <TextBox.Text>
-                <Binding Path="h_2"
-                         UpdateSourceTrigger="PropertyChanged"
-                         ValidatesOnDataErrors="True"
-                         NotifyOnValidationError="True"
-                         Mode="OneWayToSource"
-                         Converter="{StaticResource doubleConverter}"
-                         FallbackValue="10000">
-                    <Binding.ValidationRules>
-                        <vr:TerminalHeightValidation/>
-                    </Binding.ValidationRules>
-                </Binding>
-            </TextBox.Text>
-        </TextBox>
-        
+        <Grid Name="grid_Terminals" 
+              Grid.Row="0" Grid.RowSpan="2"
+              Grid.Column="0" Grid.ColumnSpan="2"
+              Validation.Error="TextBox_Error">
+            <Grid.BindingGroup>
+                <BindingGroup Name="terminalBindingGroup" NotifyOnValidationError="True">
+                    <BindingGroup.ValidationRules>
+                        <vr:TerminalRelationshipValidation ValidatesOnTargetUpdated="True" ValidationStep="UpdatedValue"/>
+                    </BindingGroup.ValidationRules>
+                </BindingGroup>
+            </Grid.BindingGroup>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):"/>
+            <TextBox Grid.Row="0" Grid.Column="1" TabIndex="1" Validation.Error="TextBox_Error" TextChanged="TextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="h_1"
+                             BindingGroupName="terminalBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="OneWayToSource"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="5">
+                        <Binding.ValidationRules>
+                            <vr:TerminalHeightValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):"/>
+            <TextBox Grid.Row="1" Grid.Column="1" TabIndex="2" Validation.Error="TextBox_Error" TextChanged="TextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="h_2"
+                             BindingGroupName="terminalBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="OneWayToSource"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="10000">
+                        <Binding.ValidationRules>
+                            <vr:TerminalHeightValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </Grid>
+
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Frequency (MHz):"/>
         <TextBox Grid.Row="2" Grid.Column="1" TabIndex="3" Validation.Error="TextBox_Error">
             <TextBox.Text>
