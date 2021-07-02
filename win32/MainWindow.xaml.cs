@@ -211,7 +211,7 @@ namespace p528_gui
         {
             InitializeComponent();
 
-            PlotModel = new PlotModel() { Title = "" };
+            PlotModel = new PlotModel() { Title = "P.528 Prediction Results" };
 
             _xAxis = new LinearAxis();
             _xAxis.Title = "Distance (km)";
