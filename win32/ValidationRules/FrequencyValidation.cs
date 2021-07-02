@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Controls;
 
-namespace p528_gui.ValidationRules
+namespace P528GUI.ValidationRules
 {
     class FrequencyValidation : ValidationRule
     {

@@ -1,4 +1,4 @@
-﻿using p528_gui.UserControls;
+﻿using P528GUI.UserControls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,7 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace p528_gui.Windows
+namespace P528GUI.Windows
 {
     public class LineDetails
     {

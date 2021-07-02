@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace p528_gui
+namespace P528GUI
 {
     static class Exporter
     {

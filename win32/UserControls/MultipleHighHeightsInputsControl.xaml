@@ -1,10 +1,10 @@
-﻿<UserControl x:Class="p528_gui.UserControls.MultipleHighHeightsInputsControl"
+﻿<UserControl x:Class="P528GUI.UserControls.MultipleHighHeightsInputsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:p528_gui.UserControls"
-             xmlns:vr="clr-namespace:p528_gui.ValidationRules"
+             xmlns:local="clr-namespace:P528GUI.UserControls"
+             xmlns:vr="clr-namespace:P528GUI.ValidationRules"
              mc:Ignorable="d" 
              d:DesignWidth="800">
     <UserControl.Resources>

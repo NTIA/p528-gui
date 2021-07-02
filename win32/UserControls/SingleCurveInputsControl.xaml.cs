@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 
-namespace p528_gui.UserControls
+namespace P528GUI.UserControls
 {
     public partial class SingleCurveInputsControl : UserControl, INotifyPropertyChanged
     {

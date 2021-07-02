@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace p528_gui.UserControls
+namespace P528GUI.UserControls
 {
     public partial class ColorPicker : UserControl
     {

@@ -1,8 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib"
-                    xmlns:cvtr="clr-namespace:p528_gui.Converters"
-                    xmlns:r="clr-namespace:p528_gui">
+                    xmlns:cvtr="clr-namespace:P528GUI.Converters"
+                    xmlns:r="clr-namespace:P528GUI">
     <!-- Data Converters -->
     <cvtr:DoubleToStringConverter x:Key="doubleConverter"/>
     <cvtr:PolarizationConverter x:Key="polarizationConverter"/>

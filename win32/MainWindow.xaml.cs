@@ -2,8 +2,8 @@
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Microsoft.Win32;
-using p528_gui.UserControls;
-using p528_gui.Windows;
+using P528GUI.UserControls;
+using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,11 +23,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using ITS.Propagation;
-using p528_gui.Converters;
+using P528GUI.Converters;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace p528_gui
+namespace P528GUI
 {
     #region Common Enums
 

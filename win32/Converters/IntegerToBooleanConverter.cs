@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace p528_gui.Converters
+namespace P528GUI.Converters
 {
     /// <summary>
     /// This performs the conversion based on the number of errors, and whether validation has

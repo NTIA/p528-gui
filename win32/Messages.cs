@@ -1,4 +1,4 @@
-﻿namespace p528_gui
+﻿namespace P528GUI
 {
     static class Messages
     {

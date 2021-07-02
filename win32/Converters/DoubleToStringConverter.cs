@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace p528_gui.Converters
+namespace P528GUI.Converters
 {
     public class DoubleToStringConverter : IValueConverter
     {

@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Windows;
 
-namespace p528_gui.Windows
+namespace P528GUI.Windows
 {
     public partial class AboutWindow : Window
     {

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace p528_gui.Converters
+namespace P528GUI.Converters
 {
     public class BrushNameConverter : IValueConverter
     {

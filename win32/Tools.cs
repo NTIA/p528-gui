@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace p528_gui
+namespace P528GUI
 {
     static class Tools
     {

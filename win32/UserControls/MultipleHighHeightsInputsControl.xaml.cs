@@ -1,6 +1,6 @@
 ﻿using ITS.Propagation;
-using p528_gui.ValidationRules;
-using p528_gui.Windows;
+using P528GUI.ValidationRules;
+using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace p528_gui.UserControls
+namespace P528GUI.UserControls
 {
     public partial class MultipleHighHeightsInputsControl : UserControl, INotifyPropertyChanged
     {

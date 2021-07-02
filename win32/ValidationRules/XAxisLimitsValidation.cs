@@ -1,4 +1,4 @@
-﻿using p528_gui.Windows;
+﻿using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-namespace p528_gui.ValidationRules
+namespace P528GUI.ValidationRules
 {
     class XAxisLimitsValidation : ValidationRule
     {

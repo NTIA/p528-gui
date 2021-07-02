@@ -1,11 +1,11 @@
-﻿using p528_gui.ValidationRules;
+﻿using P528GUI.ValidationRules;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace p528_gui.Windows
+namespace P528GUI.Windows
 {
     public partial class AddHighHeightWindow : Window, INotifyPropertyChanged
     {

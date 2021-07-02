@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace p528_gui
+namespace P528GUI
 {
     public static class GlobalState
     {

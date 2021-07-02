@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8B083C15-A7E7-411F-A5D9-06EFAAFB96BE}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>p528_gui</RootNamespace>
+    <RootNamespace>P528GUI</RootNamespace>
     <AssemblyName>P528 GUI</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

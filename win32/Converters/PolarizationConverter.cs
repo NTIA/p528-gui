@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows.Data;
 using ITS.Propagation;
 
-namespace p528_gui.Converters
+namespace P528GUI.Converters
 {
     class PolarizationConverter : IValueConverter
     {

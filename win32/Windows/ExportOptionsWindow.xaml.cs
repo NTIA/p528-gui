@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace p528_gui.Windows
+namespace P528GUI.Windows
 {
     public partial class ExportOptionsWindow : Window
     {
