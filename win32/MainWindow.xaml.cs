@@ -99,6 +99,7 @@ namespace p528_gui
         private string _progressMsg = String.Empty;
         private bool _isWorking { get; set; } = false;
         private bool _isExportable = false;
+        private bool _isSaveable = false;
         private Binding _isWorkingBinding;
         private int _steps = 500;
         private bool _fullResolution = false;
@@ -170,6 +171,19 @@ namespace p528_gui
             set
             {
                 _isExportable = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the plot in a saveable state
+        /// </summary>
+        public bool IsSaveable
+        {
+            get { return _isSaveable; }
+            set
+            {
+                _isSaveable = value;
                 OnPropertyChanged();
             }
         }
@@ -490,6 +504,7 @@ namespace p528_gui
 
             IsWorking = false;
             IsExportable = true;
+            IsSaveable = true;
         }
 
         /// <summary>
@@ -1155,5 +1170,25 @@ namespace p528_gui
         /// </summary>
         private void Btn_CancelWork_Click(object sender, RoutedEventArgs e) 
             => _worker.CancelAsync();
+
+        private void Mi_SaveAsImage_Click(object sender, RoutedEventArgs e)
+        {
+            var fileDialog = new SaveFileDialog
+            {
+                DefaultExt = ".png",
+                Filter = "Portable Network Graphics (.png)|*.png"
+            };
+
+            if (fileDialog.ShowDialog().Value)
+            {
+                var pngExporter = new OxyPlot.Wpf.PngExporter
+                {
+                    Width = 600,
+                    Height = 400,
+                    Background = OxyColors.White,
+                };
+                OxyPlot.Wpf.ExporterExtensions.ExportToFile(pngExporter, PlotModel, fileDialog.FileName);
+            }
+        }
     }
 }

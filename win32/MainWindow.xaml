@@ -28,6 +28,7 @@
         <Menu Grid.Row="0">
             <MenuItem Header="File">
                 <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="{Binding IsExportable}"/>
+                <MenuItem Header="Save Plot as Image..." Name="mi_SaveAsImage" Click="Mi_SaveAsImage_Click" IsEnabled="{Binding IsSaveable}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
