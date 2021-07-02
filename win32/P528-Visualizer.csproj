@@ -73,6 +73,7 @@
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
     <Compile Include="Converters\BooleanInverterConverter.cs" />
+    <Compile Include="Converters\BrushNameConverter.cs" />
     <Compile Include="Converters\DoubleToStringConverter.cs" />
     <Compile Include="Converters\IntegerToBooleanConverter.cs" />
     <Compile Include="Converters\MultipleBooleanAndConverter.cs" />
@@ -81,6 +82,12 @@
     <Compile Include="GlobalState.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="Tools.cs" />
+    <Compile Include="UserControls\ColorPicker.xaml.cs">
+      <DependentUpon>ColorPicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\LineStylePicker.xaml.cs">
+      <DependentUpon>LineStylePicker.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\MultipleHighHeightsInputsControl.xaml.cs">
       <DependentUpon>MultipleHighHeightsInputsControl.xaml</DependentUpon>
     </Compile>
@@ -93,10 +100,21 @@
     <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
       <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\ConfigureLineDetailsWindow.xaml.cs">
+      <DependentUpon>ConfigureLineDetailsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\PlotTitleWindow.xaml.cs">
       <DependentUpon>PlotTitleWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Resources\CommonStyles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControls\ColorPicker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControls\LineStylePicker.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -129,6 +147,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\AxisLimitsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\ConfigureLineDetailsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -217,13 +217,13 @@ namespace p528_gui
             _xAxis.Title = "Distance (km)";
             _xAxis.Minimum = 0;
             _xAxis.Maximum = 1800;
-            _xAxis.MajorGridlineStyle = LineStyle.Dot;
+            _xAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
             _xAxis.Position = AxisPosition.Bottom;
             _xAxis.AxisChanged += XAxis_Changed;
 
             _yAxis = new LinearAxis();
             _yAxis.Title = "Basic Transmission Loss (dB)";
-            _yAxis.MajorGridlineStyle = LineStyle.Dot;
+            _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
             _yAxis.Position = AxisPosition.Left;
             _yAxis.StartPosition = 1;
             _yAxis.EndPosition = 0;
@@ -264,8 +264,8 @@ namespace p528_gui
             {
                 StrokeThickness = 1,
                 MarkerSize = 0,
-                LineStyle = LineStyle.Dot,
-                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#000000")),
+                LineStyle = OxyPlot.LineStyle.Dot,
+                Color = ConvertBrushToOxyColor(Brushes.Black),
                 Title = "Free Space",
                 MarkerType = MarkerType.None,
                 CanTrackerInterpolatePoints = false,
@@ -276,8 +276,8 @@ namespace p528_gui
             {
                 StrokeThickness = 5,
                 MarkerSize = 0,
-                LineStyle = LineStyle.Solid,
-                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Green),
                 Title = "Basic Transmission Loss",
                 MarkerType = MarkerType.None,
                 CanTrackerInterpolatePoints = false,
@@ -288,8 +288,8 @@ namespace p528_gui
             {
                 StrokeThickness = 5,
                 MarkerSize = 0,
-                LineStyle = LineStyle.Solid,
-                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7")),
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Red),
                 Title = "Line of Sight",
                 MarkerType = MarkerType.None,
                 CanTrackerInterpolatePoints = false,
@@ -300,8 +300,8 @@ namespace p528_gui
             {
                 StrokeThickness = 5,
                 MarkerSize = 0,
-                LineStyle = LineStyle.Solid,
-                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2")),
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Blue),
                 Title = "Diffraction",
                 MarkerType = MarkerType.None,
                 CanTrackerInterpolatePoints = false,
@@ -312,8 +312,8 @@ namespace p528_gui
             {
                 StrokeThickness = 5,
                 MarkerSize = 0,
-                LineStyle = LineStyle.Solid,
-                Color = ConvertBrushToOxyColor((SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00")),
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Orange),
                 Title = "Troposcatter",
                 MarkerType = MarkerType.None,
                 CanTrackerInterpolatePoints = false,
@@ -641,7 +641,7 @@ namespace p528_gui
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
+                    LineStyle = OxyPlot.LineStyle.Solid,
                     Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
                     Title = $"{inputControl.h_2s[j]} {GlobalState.Units}",
                     MarkerType = MarkerType.None,
@@ -688,7 +688,7 @@ namespace p528_gui
                 {
                     StrokeThickness = 5,
                     MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
+                    LineStyle = OxyPlot.LineStyle.Solid,
                     Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
                     Title = $"{inputControl.times[j]}%",
                     MarkerType = MarkerType.None,
@@ -1198,6 +1198,40 @@ namespace p528_gui
                 return;
 
             PlotModel.Title = wndw.PlotTitle;
+            plot.InvalidatePlot();
+        }
+
+        private void Mi_View_SetLineDetails(object sender, RoutedEventArgs e)
+        {
+            // gather current line details
+            var lineDetails = new List<LineDetails>();
+            foreach (LineSeries series in PlotModel.Series)
+            {
+                lineDetails.Add(new LineDetails()
+                {
+                    Label = series.Title,
+                    Thickness = series.StrokeThickness,
+                    LineStyle = (UserControls.LineStyle)(int)series.LineStyle,
+                    LineColor = Tools.LineColors.Keys.Single(c => c.Color.R == series.Color.R && c.Color.G == series.Color.G && c.Color.B == series.Color.B)
+                });
+            }
+
+            var wndw = new ConfigureLineDetailsWindow() { LineDetails = lineDetails };
+            if (!wndw.ShowDialog().Value)
+                return;
+
+            // update plot with user defined info
+            for (int i = 0; i < PlotModel.Series.Count; i++)
+            {
+                var details = wndw.LineDetails[i];
+                var series = (LineSeries)PlotModel.Series[i];
+
+                series.Title = details.Label;
+                series.LineStyle = (OxyPlot.LineStyle)(int)details.LineStyle;
+                series.Color = ConvertBrushToOxyColor(details.LineColor);
+                series.StrokeThickness = details.Thickness;
+            }
+
             plot.InvalidatePlot();
         }
     }

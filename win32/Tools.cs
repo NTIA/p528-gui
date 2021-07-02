@@ -12,8 +12,6 @@ namespace p528_gui
 {
     static class Tools
     {
-        static private SolidColorBrush[] _listOfBrushes = new[] { Brushes.Red, Brushes.Blue, Brushes.Green, Brushes.Purple, Brushes.Pink, Brushes.Orange, Brushes.Brown };
-
         static public double ConvertToMeters(double value)
             => (GlobalState.Units == Units.Meters) ? value : (value * Constants.METER_PER_FOOT);
 
@@ -40,9 +38,25 @@ namespace p528_gui
 
         static public Brush GetBrush(int index)
         {
-            int i = index % _listOfBrushes.Length;
+            int i = index % LineColors.Count;
 
-            return _listOfBrushes[i];
+            return LineColors.ElementAt(i).Key;
         }
+
+        /// <summary>
+        /// List of support line colors
+        /// </summary>
+        public static Dictionary<SolidColorBrush, string> LineColors = new Dictionary<SolidColorBrush, string>()
+        {
+            { Brushes.Blue, "Blue" },
+            { Brushes.Red, "Red" },
+            { Brushes.Black, "Black" },
+            { Brushes.Green, "Green" },
+            { Brushes.Purple, "Purple" },
+            { Brushes.Orange, "Orange" },
+            { Brushes.Brown, "Brown" },
+            { Brushes.SkyBlue, "Sky Blue" },
+            { Brushes.Pink, "Pink" }
+        };
     }
 }

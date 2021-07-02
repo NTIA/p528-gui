@@ -67,8 +67,8 @@
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="Configure...">
-                    <MenuItem Header="Set Plot Title"
-                              Click="Mi_View_SetPlotTitle"/>
+                    <MenuItem Header="Set Plot Title" Click="Mi_View_SetPlotTitle"/>
+                    <MenuItem Header="Line Details" Click="Mi_View_SetLineDetails" IsEnabled="{Binding IsSaveable}"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>

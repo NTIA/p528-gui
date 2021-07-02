@@ -7,6 +7,7 @@
     <cvtr:DoubleToStringConverter x:Key="doubleConverter"/>
     <cvtr:PolarizationConverter x:Key="polarizationConverter"/>
     <cvtr:IntegerToBooleanConverter x:Key="integerConverter"/>
+    <cvtr:DoubleToStringConverter x:Key="thicknessConverter"/>
 
     <!-- Object Data Providers -->
     <ObjectDataProvider x:Key="enumPolarization" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
