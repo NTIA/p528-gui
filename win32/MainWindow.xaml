@@ -32,8 +32,23 @@
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="Mode" Visibility="Visible" Name="mi_Mode">
+                <MenuItem Header="Single Curve" 
+                              IsChecked="True"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.Single}"/>
+                <MenuItem Header="Multiple Low Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleLowTerminals}"/>
+                <MenuItem Header="Multiple High Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleHighTerminals}"/>
+                <MenuItem Header="Multiple Time Percentages"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleTimes}"/>
+            </MenuItem>
             <MenuItem Header="View" Name="mi_View" Visibility="Visible">
-                <MenuItem Header="Free Space Line" 
+                <MenuItem Header="Show Free Space Line" 
                           Click="Mi_FreeSpace_Click"
                           IsCheckable="True" 
                           IsChecked="{Binding IsFreeSpaceLineVisible}"/>
@@ -41,8 +56,7 @@
                           Click="Mi_ModeOfProp_Click" 
                           IsCheckable="True" 
                           IsChecked="{Binding IsModeOfPropVisible}"/>
-            </MenuItem>
-            <MenuItem Header="Options">
+                <Separator/>
                 <MenuItem Header="Units...">
                     <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
                     <MenuItem Header="Feet/Nautical Miles" Name="mi_Units_Feet" IsChecked="False" Click="Mi_Units_Feet_Click"/>
@@ -51,20 +65,10 @@
                     <MenuItem Header="Set Axis Limits" Name="mi_SetAxisLimits" Click="Mi_SetAxisLimits_Click"/>
                     <MenuItem Header="Reset to Defaults" Name="mi_ResetAxisLimits" Click="Mi_ResetAxisLimits_Click"/>
                 </MenuItem>
-                <MenuItem Header="Plot Mode..." Name="mi_Mode">
-                    <MenuItem Header="Single Curve" 
-                              IsChecked="True"
-                              Command="{StaticResource PlotModeCommand}"
-                              CommandParameter="{x:Static local:PlotMode.Single}"/>
-                    <MenuItem Header="Multiple Low Terminal Heights" 
-                              Command="{StaticResource PlotModeCommand}"
-                              CommandParameter="{x:Static local:PlotMode.MultipleLowTerminals}"/>
-                    <MenuItem Header="Multiple High Terminal Heights" 
-                              Command="{StaticResource PlotModeCommand}"
-                              CommandParameter="{x:Static local:PlotMode.MultipleHighTerminals}"/>
-                    <MenuItem Header="Multiple Time Percentages"
-                              Command="{StaticResource PlotModeCommand}"
-                              CommandParameter="{x:Static local:PlotMode.MultipleTimes}"/>
+                <Separator/>
+                <MenuItem Header="Configure...">
+                    <MenuItem Header="Set Plot Title"
+                              Click="Mi_View_SetPlotTitle"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>

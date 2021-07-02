@@ -93,6 +93,9 @@
     <Compile Include="UserControls\SingleCurveInputsControl.xaml.cs">
       <DependentUpon>SingleCurveInputsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\PlotTitleWindow.xaml.cs">
+      <DependentUpon>PlotTitleWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="Resources\CommonStyles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -179,6 +182,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="UserControls\SingleCurveInputsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\PlotTitleWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

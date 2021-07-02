@@ -1190,5 +1190,15 @@ namespace p528_gui
                 OxyPlot.Wpf.ExporterExtensions.ExportToFile(pngExporter, PlotModel, fileDialog.FileName);
             }
         }
+
+        private void Mi_View_SetPlotTitle(object sender, RoutedEventArgs e)
+        {
+            var wndw = new PlotTitleWindow();
+            if (!wndw.ShowDialog().Value)
+                return;
+
+            PlotModel.Title = wndw.PlotTitle;
+            plot.InvalidatePlot();
+        }
     }
 }
