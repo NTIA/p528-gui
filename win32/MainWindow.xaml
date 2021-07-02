@@ -27,7 +27,7 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="False"/>
+                <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="{Binding IsExportable}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
@@ -81,7 +81,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
-                    <TextBlock Text="Generating Data..." HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ProgressMsg}" HorizontalAlignment="Center"/>
                     <ProgressBar Name="progressBar" Height="15" Margin="3" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}"/>
                     <Button Content="Cancel" Width="75" Click="Btn_CancelWork_Click"/>
                 </StackPanel>
