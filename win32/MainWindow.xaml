@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:p528_gui"
         xmlns:controls="clr-namespace:p528_gui.UserControls"
         mc:Ignorable="d"
-        Title="ITS ITU-R Rec P.528-4 GUI" Height="600" Width="800"
+        Title="ITS Recommendation ITU-R P.528-5 GUI" Height="600" Width="800"
         Icon="img\favicon.ico"
         Loaded="Window_Loaded">
     <Window.Resources>
