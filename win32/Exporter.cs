@@ -50,7 +50,7 @@ namespace P528GUI
                 if (isRowAligned)
                 {
                     fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", curveData.Distances)}");
+                    fs.WriteLine($"{String.Join(",", curveData.d__user_units)}");
                     fs.WriteLine($"A__db,{String.Join(",", curveData.L_btl__db)}");
                     if (includeFreeSpace)
                         fs.WriteLine($"A_fs__db,{String.Join(",", curveData.L_fs__db)}");
@@ -69,7 +69,7 @@ namespace P528GUI
 
                     for (int i = 0; i < curveData.L_btl__db.Count; i++)
                     {
-                        fs.Write($"{curveData.Distances[i]},{curveData.L_btl__db[i]}");
+                        fs.Write($"{curveData.d__user_units[i]},{curveData.L_btl__db[i]}");
                         if (includeFreeSpace)
                             fs.Write($",{curveData.L_fs__db[i]}");
                         if (includeModeOfPropagation)
@@ -95,7 +95,7 @@ namespace P528GUI
                 if (isRowAligned)
                 {
                     fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", curveDatas[0].Distances)}");
+                    fs.WriteLine($"{String.Join(",", curveDatas[0].d__user_units)}");
                     for (int i = 0; i < curveDatas.Count; i++)
                     {
                         var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
@@ -114,7 +114,7 @@ namespace P528GUI
 
                     for (int i = 0; i < curveDatas.Count; i++)
                     {
-                        fs.Write($"{curveDatas[0].Distances[i]}");
+                        fs.Write($"{curveDatas[0].d__user_units[i]}");
                         for (int j = 0; j < curveDatas.Count; j++)
                             fs.Write($",{curveDatas[j].L_btl__db[i]}");
 
@@ -139,7 +139,7 @@ namespace P528GUI
                 if (isRowAligned)
                 {
                     fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", curveDatas[0].Distances)}");
+                    fs.WriteLine($"{String.Join(",", curveDatas[0].d__user_units)}");
                     for (int i = 0; i < curveDatas.Count; i++)
                     {
                         var units = (GlobalState.Units == Units.Meters) ? "meters" : "feet";
@@ -156,9 +156,9 @@ namespace P528GUI
                     }
                     fs.WriteLine();
 
-                    for (int i = 0; i < curveDatas[0].Distances.Count; i++)
+                    for (int i = 0; i < curveDatas[0].d__user_units.Count; i++)
                     {
-                        fs.Write($"{curveDatas[0].Distances[i]}");
+                        fs.Write($"{curveDatas[0].d__user_units[i]}");
                         for (int j = 0; j < curveDatas.Count; j++)
                             fs.Write($",{curveDatas[j].L_btl__db[i]}");
 
@@ -183,7 +183,7 @@ namespace P528GUI
                 if (isRowAligned)
                 {
                     fs.Write(((GlobalState.Units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", curveDatas[0].Distances)}");
+                    fs.WriteLine($"{String.Join(",", curveDatas[0].d__user_units)}");
                     for (int i = 0; i < curveDatas.Count; i++)
                         fs.WriteLine($"time = {curveDatas[i].ModelArgs.time} %,{String.Join(",", curveDatas[i].L_btl__db)}");
                 }
@@ -194,9 +194,9 @@ namespace P528GUI
                         fs.Write($",time = {curveDatas[i].ModelArgs.time} %");
                     fs.WriteLine();
 
-                    for (int i = 0; i < curveDatas[0].Distances.Count; i++)
+                    for (int i = 0; i < curveDatas[0].d__user_units.Count; i++)
                     {
-                        fs.Write($"{curveDatas[0].Distances[i]}");
+                        fs.Write($"{curveDatas[0].d__user_units[i]}");
                         for (int j = 0; j < curveDatas.Count; j++)
                             fs.Write($",{curveDatas[j].L_btl__db[i]}");
 

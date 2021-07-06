@@ -6,22 +6,12 @@ using P528GUI.UserControls;
 using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using ITS.Propagation;
 using P528GUI.Converters;
 using System.ComponentModel;
@@ -29,79 +19,73 @@ using System.Runtime.CompilerServices;
 
 namespace P528GUI
 {
-    #region Common Enums
-
-    enum PlotMode
-    {
-        Single,
-        MultipleLowTerminals,
-        MultipleHighTerminals,
-        MultipleTimes
-    }
-
-    public enum Units
-    {
-        Meters,
-        Feet
-    }
-
-    public enum ApplicationMode
-    {
-        SingleCurve,
-        MultipleHeights,
-        MultipleTimes
-    }
-
-    enum Polarization : int
-    {
-        Horizontal = 0,
-        Vertical = 1
-    }
-
-    #endregion
-
-    class ModelArgs
-    {
-        public double h_1__user_units { get; set; }
-
-        public double h_2__user_units { get; set; }
-
-        public double time { get; set; }
-
-        public P528.Polarization Polarization { get; set; }
-
-        public double f__mhz { get; set; }
-    }
-
-    class CurveData
-    {
-        public ModelArgs ModelArgs { get; set; }
-
-        public int Rtn { get; set; } = 0;
-
-        public List<double> Distances { get; set; } = new List<double>();
-
-        public List<double> L_fs__db { get; set; } = new List<double>();
-
-        public List<double> L_btl__db { get; set; } = new List<double>();
-
-        public List<P528.ModeOfPropagation> PropModes { get; set; } = new List<P528.ModeOfPropagation>();
-    }
-
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Private Fields 
 
+        /// <summary>
+        /// X-axis for the plot
+        /// </summary>
         private readonly LinearAxis _xAxis;
+
+        /// <summary>
+        /// Y-axis for the plot
+        /// </summary>
         private readonly LinearAxis _yAxis;
+
+        /// <summary>
+        /// BackgroundWorker that handles data generation on a different thread
+        /// </summary>
         private BackgroundWorker _worker;
+
+        /// <summary>
+        /// Backing field for ProgressPercentage
+        /// </summary>
         private int _progressPercentage { get; set; } = 0;
+
+        /// <summary>
+        /// Backing field for ProgressMsg
+        /// </summary>
         private string _progressMsg = String.Empty;
+
+        /// <summary>
+        /// Status of the P528 backgroundworker
+        /// </summary>
         private bool _isWorking { get; set; } = false;
+
+        /// <summary>
+        /// Is analysis able to be exported to CSV
+        /// </summary>
         private bool _isExportable = false;
+
+        /// <summary>
+        /// Is figure able to be saved as image
+        /// </summary>
         private bool _isSaveable = false;
+
+        /// <summary>
+        /// Is the mode of propagation menu item enabled
+        /// </summary>
+        private bool _isModeOfPropEnabled = false;
+
+        /// <summary>
+        /// Is the mode of propagation menu item checked
+        /// </summary>
+        private bool _isModeOfPropChecked = true;
+
+        /// <summary>
+        /// Shared binding object
+        /// </summary>
         private Binding _isWorkingBinding;
+
+        /// <summary>
+        /// Default number of steps in plot
+        /// </summary>
         private int _steps = 500;
+
+        /// <summary>
+        /// Flag if P528 backgroundworker to used _steps or full resolution when generating data
+        /// </summary>
         private bool _fullResolution = false;
 
         #endregion
@@ -116,7 +100,28 @@ namespace P528GUI
         /// <summary>
         /// Is the propagation mode visible
         /// </summary>
-        public bool IsModeOfPropVisible { get; set; } = true;
+        public bool IsModeOfPropChecked
+        {
+            get { return _isModeOfPropChecked; }
+            set
+            {
+                _isModeOfPropChecked = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the propagation mode menu item enabled
+        /// </summary>
+        public bool IsModeOfPropEnabled
+        {
+            get { return _isModeOfPropEnabled; }
+            set
+            {
+                _isModeOfPropEnabled = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Is the free space basic transmission loss curve visible?
@@ -213,6 +218,7 @@ namespace P528GUI
 
             PlotModel = new PlotModel() { Title = "P.528 Prediction Results" };
 
+            // configure x-axis
             _xAxis = new LinearAxis();
             _xAxis.Title = "Distance (km)";
             _xAxis.Minimum = 0;
@@ -221,6 +227,7 @@ namespace P528GUI
             _xAxis.Position = AxisPosition.Bottom;
             _xAxis.AxisChanged += XAxis_Changed;
 
+            // configure y-axis
             _yAxis = new LinearAxis();
             _yAxis.Title = "Basic Transmission Loss (dB)";
             _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
@@ -230,9 +237,11 @@ namespace P528GUI
             _yAxis.Minimum = 0;
             _yAxis.Maximum = 300;
 
+            // add axis' to plot
             PlotModel.Axes.Add(_xAxis);
             PlotModel.Axes.Add(_yAxis);
 
+            // enable data binding
             DataContext = this;
 
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
@@ -248,83 +257,14 @@ namespace P528GUI
             _isWorkingBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
             _isWorkingBinding.Converter = new BooleanInverterConverter();
 
+            // set up the background worker for P528 data generation
             _worker = new BackgroundWorker();
             _worker.DoWork += Worker_RunP528;
             _worker.WorkerReportsProgress = true;
             _worker.ProgressChanged += Worker_ProgressChanged;
             _worker.WorkerSupportsCancellation = true;
         }
-
-        private void XAxis_Changed(object sender, AxisChangedEventArgs e) => IsExportable = false;
-
-        private void InitializeLineSeries()
-        {
-            // set up free space loss line and bind it to boolean
-            _fsSeries = new LineSeries()
-            {
-                StrokeThickness = 1,
-                MarkerSize = 0,
-                LineStyle = OxyPlot.LineStyle.Dot,
-                Color = ConvertBrushToOxyColor(Brushes.Black),
-                Title = "Free Space",
-                MarkerType = MarkerType.None,
-                CanTrackerInterpolatePoints = false,
-                IsVisible = IsFreeSpaceLineVisible
-            };
-
-            _btlSeries = new LineSeries()
-            {
-                StrokeThickness = 5,
-                MarkerSize = 0,
-                LineStyle = OxyPlot.LineStyle.Solid,
-                Color = ConvertBrushToOxyColor(Brushes.Green),
-                Title = "Basic Transmission Loss",
-                MarkerType = MarkerType.None,
-                CanTrackerInterpolatePoints = false,
-                IsVisible = !IsModeOfPropVisible
-            };
-
-            _losSeries = new LineSeries()
-            {
-                StrokeThickness = 5,
-                MarkerSize = 0,
-                LineStyle = OxyPlot.LineStyle.Solid,
-                Color = ConvertBrushToOxyColor(Brushes.Red),
-                Title = "Line of Sight",
-                MarkerType = MarkerType.None,
-                CanTrackerInterpolatePoints = false,
-                IsVisible = IsModeOfPropVisible
-            };
-
-            _dfracSeries = new LineSeries()
-            {
-                StrokeThickness = 5,
-                MarkerSize = 0,
-                LineStyle = OxyPlot.LineStyle.Solid,
-                Color = ConvertBrushToOxyColor(Brushes.Blue),
-                Title = "Diffraction",
-                MarkerType = MarkerType.None,
-                CanTrackerInterpolatePoints = false,
-                IsVisible = IsModeOfPropVisible
-            };
-
-            _scatSeries = new LineSeries()
-            {
-                StrokeThickness = 5,
-                MarkerSize = 0,
-                LineStyle = OxyPlot.LineStyle.Solid,
-                Color = ConvertBrushToOxyColor(Brushes.Orange),
-                Title = "Troposcatter",
-                MarkerType = MarkerType.None,
-                CanTrackerInterpolatePoints = false,
-                IsVisible = IsModeOfPropVisible
-            };
-        }
-
-        private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
-
-        OxyColor ConvertBrushToOxyColor(Brush brush) => OxyColor.Parse(((SolidColorBrush)brush).Color.ToString());
-
+        
         #region Render Methods (Prep Background Worker)
 
         private void RenderSingleCurve()
@@ -479,7 +419,7 @@ namespace P528GUI
                         curveData.Rtn = rtn;
 
                     // record the result
-                    curveData.Distances.Add(Tools.ConvertFromKm(result.d__km));
+                    curveData.d__user_units.Add(Tools.ConvertFromKm(result.d__km));
                     curveData.L_btl__db.Add(result.A__db);
                     curveData.L_fs__db.Add(result.A_fs__db);
                     curveData.PropModes.Add(result.ModeOfPropagation);
@@ -534,23 +474,23 @@ namespace P528GUI
             ResetPlotData();
 
             // build lines
-            for (int i = 0; i < curveData.Distances.Count; i++)
+            for (int i = 0; i < curveData.d__user_units.Count; i++)
             {
                 switch (curveData.PropModes[i])
                 {
                     case P528.ModeOfPropagation.LineOfSight:
-                        _losSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        _losSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
                     case P528.ModeOfPropagation.Diffraction:
-                        _dfracSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        _dfracSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
                     case P528.ModeOfPropagation.Troposcatter:
-                        _scatSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                        _scatSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
                 }
 
-                _btlSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
-                _fsSeries.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_fs__db[i]));
+                _btlSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
+                _fsSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_fs__db[i]));
             }
 
             // fill in the gaps between line segments to make continuous
@@ -602,8 +542,8 @@ namespace P528GUI
                 };
 
                 // build line
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
 
                 // add to plot
                 PlotModel.Series.Add(series);
@@ -649,8 +589,8 @@ namespace P528GUI
                 };
 
                 // build line
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
 
                 // add to plot
                 PlotModel.Series.Add(series);
@@ -696,8 +636,8 @@ namespace P528GUI
                 };
 
                 // build line
-                for (int i = 0; i < curveData.Distances.Count; i++)
-                    series.Points.Add(new DataPoint(curveData.Distances[i], curveData.L_btl__db[i]));
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
 
                 // add to plot
                 PlotModel.Series.Add(series);
@@ -707,8 +647,8 @@ namespace P528GUI
 
             // update free space line
             _fsSeries.Points.Clear();
-            for (int i = 0; i < jobResults[0].Distances.Count; i++)
-                _fsSeries.Points.Add(new DataPoint(jobResults[0].Distances[i], jobResults[0].L_fs__db[i]));
+            for (int i = 0; i < jobResults[0].d__user_units.Count; i++)
+                _fsSeries.Points.Add(new DataPoint(jobResults[0].d__user_units[i], jobResults[0].L_fs__db[i]));
             PlotModel.Series.Add(_fsSeries);
 
             // redraw the plot
@@ -956,10 +896,10 @@ namespace P528GUI
         /// </summary>
         private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
         {
-            _losSeries.IsVisible = IsModeOfPropVisible;
-            _dfracSeries.IsVisible = IsModeOfPropVisible;
-            _scatSeries.IsVisible = IsModeOfPropVisible;
-            _btlSeries.IsVisible = !IsModeOfPropVisible;
+            _losSeries.IsVisible = IsModeOfPropChecked;
+            _dfracSeries.IsVisible = IsModeOfPropChecked;
+            _scatSeries.IsVisible = IsModeOfPropChecked;
+            _btlSeries.IsVisible = !IsModeOfPropChecked;
 
             plot.InvalidatePlot();
         }
@@ -996,19 +936,6 @@ namespace P528GUI
             SetUnits();
         }
 
-        #endregion
-
-
-        private void SetUnits()
-        {
-            if (grid_InputControls.Children.Count == 0)
-                return;
-
-            // Update text
-            _xAxis.Title = "Distance " + ((GlobalState.Units == Units.Meters) ? "(km)" : "(n mile)");
-            ResetPlotAxis();
-        }
-
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
         {
             var limitsWndw = new AxisLimitsWindow()
@@ -1033,143 +960,6 @@ namespace P528GUI
         }
 
         private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlotAxis();
-        
-        private void ResetPlotAxis()
-        {
-            if (GlobalState.Units == Units.Meters)
-                _xAxis.Maximum = 1800;
-            else
-                _xAxis.Maximum = 970;
-
-            _xAxis.Minimum = 0;
-            _yAxis.Maximum = 300;
-            _yAxis.Minimum = 100;
-
-            ResetPlotData();
-        }
-
-        /// <summary>
-        /// Clear the plot and its line series of all data
-        /// </summary>
-        private void ResetPlotData()
-        {
-            // clear the plot of any data series
-            PlotModel.Series.Clear();
-
-            // clear lines series of data points
-            _losSeries.Points.Clear();
-            _dfracSeries.Points.Clear();
-            _scatSeries.Points.Clear();
-            _btlSeries.Points.Clear();
-            _fsSeries.Points.Clear();
-
-            plot.InvalidatePlot();
-        }
-
-        /// <summary>
-        /// Controls the application mode with respect to the type of plot generated
-        /// </summary>
-        void Command_PlotMode(object sender, ExecutedRoutedEventArgs e)
-        {
-            // grab the command parameter
-            var plotMode = (PlotMode)e.Parameter;
-
-            // set the appropriate menu check
-            foreach (MenuItem mi in mi_Mode.Items)
-                mi.IsChecked = (PlotMode)mi.CommandParameter == plotMode;
-
-            // reset the UI
-            grid_InputControls.Children.Clear();
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-
-            UserControl userControl = null;            
-
-            // set the application with the correct UI elements and configuration
-            switch (plotMode)
-            {
-                case PlotMode.Single:
-                    Render = RenderSingleCurve;
-                    Export = CsvExport_SingleCurveInit;
-
-                    userControl = new SingleCurveInputsControl();
-                    
-                    mi_View.Visibility = Visibility.Visible;
-                    IsModeOfPropVisible = true;
-                    break;
-
-                case PlotMode.MultipleLowTerminals:
-                    Render = RenderMultipleLowHeights;
-                    Export = CsvExport_MultipleLowTerminals;
-
-                    userControl = new MultipleLowHeightsInputsControl();
-
-                    mi_View.Visibility = Visibility.Collapsed;
-                    IsModeOfPropVisible = true;
-                    break;
-
-                case PlotMode.MultipleHighTerminals:
-                    Render = RenderMultipleHighHeights;
-                    Export = CsvExport_MultipleHighTerminals;
-
-                    userControl = new MultipleHighHeightsInputsControl();
-
-                    mi_View.Visibility = Visibility.Collapsed;
-                    IsModeOfPropVisible = true;
-                    break;
-
-                case PlotMode.MultipleTimes:
-                    Render = RenderMultipleTimes;
-                    Export = CsvExport_MultipleTimePercentages;
-
-                    userControl = new MultipleTimeInputsControl();
-
-                    mi_View.Visibility = Visibility.Visible;
-                    IsModeOfPropVisible = false;
-                    break;
-            }
-
-            grid_InputControls.Children.Add(userControl);
-
-            // define binding for input validation errors
-            Binding inputErrorBinding = new Binding("ErrorCnt");
-            inputErrorBinding.Source = userControl;
-            inputErrorBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            inputErrorBinding.Converter = new IntegerToBooleanConverter();
-
-            // define multibinding for Render button to both input validation and background worker status
-            MultiBinding multiBinding = new MultiBinding();
-            multiBinding.Bindings.Add(inputErrorBinding);
-            multiBinding.Bindings.Add(_isWorkingBinding);
-            multiBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
-            multiBinding.Converter = new MultipleBooleanAndConverter();
-
-            // set bindings
-            BindingOperations.SetBinding(userControl, IsEnabledProperty, _isWorkingBinding);
-            BindingOperations.SetBinding(btn_Render, IsEnabledProperty, multiBinding);
-
-            // force update the view
-            PlotModel.Series.Clear();
-            plot.InvalidatePlot();
-            GlobalState.Units = GlobalState.Units;
-            //ActivePlot = false;
-        }
-
-        /// <summary>
-        /// Program initialization method - fired at startup
-        /// </summary>
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            // initialized application for Single Curve Mode
-            var command = PlotModeCommand.Command;
-            command.Execute(PlotMode.Single);
-        }
-
-        /// <summary>
-        /// Cancel the background worker
-        /// </summary>
-        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e) 
-            => _worker.CancelAsync();
 
         private void Mi_SaveAsImage_Click(object sender, RoutedEventArgs e)
         {
@@ -1234,5 +1024,231 @@ namespace P528GUI
 
             plot.InvalidatePlot();
         }
+
+        #endregion
+
+        #region Non-Menu Event Handlers
+
+        /// <summary>
+        /// Program initialization method - fired at startup
+        /// </summary>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // initialized application for Single Curve Mode
+            var command = PlotModeCommand.Command;
+            command.Execute(PlotMode.Single);
+        }
+
+        /// <summary>
+        /// Cancel the background worker
+        /// </summary>
+        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e)
+            => _worker.CancelAsync();
+
+        private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
+
+        private void XAxis_Changed(object sender, AxisChangedEventArgs e) => IsExportable = false;
+
+        #endregion
+
+        private void SetUnits()
+        {
+            if (grid_InputControls.Children.Count == 0)
+                return;
+
+            // Update text
+            _xAxis.Title = "Distance " + ((GlobalState.Units == Units.Meters) ? "(km)" : "(n mile)");
+            ResetPlotAxis();
+        }
+
+        private void ResetPlotAxis()
+        {
+            if (GlobalState.Units == Units.Meters)
+                _xAxis.Maximum = 1800;
+            else
+                _xAxis.Maximum = 970;
+
+            _xAxis.Minimum = 0;
+            _yAxis.Maximum = 300;
+            _yAxis.Minimum = 100;
+
+            ResetPlotData();
+        }
+
+        /// <summary>
+        /// Clear the plot and its line series of all data
+        /// </summary>
+        private void ResetPlotData()
+        {
+            // clear the plot of any data series
+            PlotModel.Series.Clear();
+
+            // clear lines series of data points
+            _losSeries.Points.Clear();
+            _dfracSeries.Points.Clear();
+            _scatSeries.Points.Clear();
+            _btlSeries.Points.Clear();
+            _fsSeries.Points.Clear();
+
+            plot.InvalidatePlot();
+        }
+
+        /// <summary>
+        /// Controls the application mode with respect to the type of plot generated
+        /// </summary>
+        void Command_PlotMode(object sender, ExecutedRoutedEventArgs e)
+        {
+            // grab the command parameter
+            var plotMode = (PlotMode)e.Parameter;
+
+            // set the appropriate menu check
+            foreach (MenuItem mi in mi_Mode.Items)
+                mi.IsChecked = (PlotMode)mi.CommandParameter == plotMode;
+
+            // if the background worker is busy, cancel its job
+            if (_worker.IsBusy)
+                _worker.CancelAsync();
+
+            // reset the UI
+            grid_InputControls.Children.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
+
+            UserControl userControl = null;            
+
+            // set the application with the correct UI elements and configuration
+            switch (plotMode)
+            {
+                case PlotMode.Single:
+                    Render = RenderSingleCurve;
+                    Export = CsvExport_SingleCurveInit;
+
+                    userControl = new SingleCurveInputsControl();
+
+                    IsModeOfPropEnabled = true;
+                    IsModeOfPropChecked = true;
+                    break;
+
+                case PlotMode.MultipleLowTerminals:
+                    Render = RenderMultipleLowHeights;
+                    Export = CsvExport_MultipleLowTerminals;
+
+                    userControl = new MultipleLowHeightsInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+
+                case PlotMode.MultipleHighTerminals:
+                    Render = RenderMultipleHighHeights;
+                    Export = CsvExport_MultipleHighTerminals;
+
+                    userControl = new MultipleHighHeightsInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+
+                case PlotMode.MultipleTimes:
+                    Render = RenderMultipleTimes;
+                    Export = CsvExport_MultipleTimePercentages;
+
+                    userControl = new MultipleTimeInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+            }
+
+            grid_InputControls.Children.Add(userControl);
+
+            // define binding for input validation errors
+            Binding inputErrorBinding = new Binding("ErrorCnt");
+            inputErrorBinding.Source = userControl;
+            inputErrorBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            inputErrorBinding.Converter = new IntegerToBooleanConverter();
+
+            // define multibinding for Render button to both input validation and background worker status
+            MultiBinding multiBinding = new MultiBinding();
+            multiBinding.Bindings.Add(inputErrorBinding);
+            multiBinding.Bindings.Add(_isWorkingBinding);
+            multiBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            multiBinding.Converter = new MultipleBooleanAndConverter();
+
+            // set bindings
+            BindingOperations.SetBinding(userControl, IsEnabledProperty, _isWorkingBinding);
+            BindingOperations.SetBinding(btn_Render, IsEnabledProperty, multiBinding);
+
+            // force update the view
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
+            GlobalState.Units = GlobalState.Units;
+        }
+
+        private void InitializeLineSeries()
+        {
+            // set up free space loss line and bind it to boolean
+            _fsSeries = new LineSeries()
+            {
+                StrokeThickness = 1,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Dot,
+                Color = ConvertBrushToOxyColor(Brushes.Black),
+                Title = "Free Space",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsFreeSpaceLineVisible
+            };
+
+            _btlSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Green),
+                Title = "Basic Transmission Loss",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = !IsModeOfPropChecked
+            };
+
+            _losSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Red),
+                Title = "Line of Sight",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
+
+            _dfracSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Blue),
+                Title = "Diffraction",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
+
+            _scatSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Orange),
+                Title = "Troposcatter",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
+        }
+
+        OxyColor ConvertBrushToOxyColor(Brush brush) => OxyColor.Parse(((SolidColorBrush)brush).Color.ToString());
     }
 }

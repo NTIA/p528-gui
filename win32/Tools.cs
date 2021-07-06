@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace P528GUI
@@ -25,9 +19,7 @@ namespace P528GUI
             => (GlobalState.Units == Units.Meters) ? value : (value / Constants.KM_PER_NAUTICAL_MILE);
 
         static public double ConvertMetersToSpecifiedUnits(double meters, Units units)
-        {
-            return (units == Units.Meters) ? meters : (meters / Constants.METER_PER_FOOT);
-        }
+            => (units == Units.Meters) ? meters : (meters / Constants.METER_PER_FOOT);
 
         static public double ConvertSpecifiedUnitsToKm(double value, Units units)
         {

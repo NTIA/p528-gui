@@ -78,9 +78,12 @@
     <Compile Include="Converters\IntegerToBooleanConverter.cs" />
     <Compile Include="Converters\MultipleBooleanAndConverter.cs" />
     <Compile Include="Converters\PolarizationConverter.cs" />
+    <Compile Include="CurveData.cs" />
+    <Compile Include="Enums.cs" />
     <Compile Include="Exporter.cs" />
     <Compile Include="GlobalState.cs" />
     <Compile Include="Messages.cs" />
+    <Compile Include="ModelArgs.cs" />
     <Compile Include="Tools.cs" />
     <Compile Include="UserControls\ColorPicker.xaml.cs">
       <DependentUpon>ColorPicker.xaml</DependentUpon>
@@ -154,10 +157,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Windows\ExportingWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Windows\ExportOptionsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -192,9 +191,6 @@
     </Compile>
     <Compile Include="Windows\AxisLimitsWindow.xaml.cs">
       <DependentUpon>AxisLimitsWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Windows\ExportingWindow.xaml.cs">
-      <DependentUpon>ExportingWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\ExportOptionsWindow.xaml.cs">
       <DependentUpon>ExportOptionsWindow.xaml</DependentUpon>

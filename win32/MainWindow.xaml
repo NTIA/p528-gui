@@ -47,7 +47,7 @@
                               Command="{StaticResource PlotModeCommand}"
                               CommandParameter="{x:Static local:PlotMode.MultipleTimes}"/>
             </MenuItem>
-            <MenuItem Header="View" Name="mi_View" Visibility="Visible">
+            <MenuItem Header="View" Visibility="Visible">
                 <MenuItem Header="Show Free Space Line" 
                           Click="Mi_FreeSpace_Click"
                           IsCheckable="True" 
@@ -55,7 +55,8 @@
                 <MenuItem Header="Highlight Mode of Propagation" 
                           Click="Mi_ModeOfProp_Click" 
                           IsCheckable="True" 
-                          IsChecked="{Binding IsModeOfPropVisible}"/>
+                          IsChecked="{Binding IsModeOfPropChecked}"
+                          IsEnabled="{Binding IsModeOfPropEnabled}"/>
                 <Separator/>
                 <MenuItem Header="Units...">
                     <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
