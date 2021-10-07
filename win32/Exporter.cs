@@ -27,11 +27,12 @@ namespace P528GUI
             {
                 WriteHeader(fs);
 
-                // Check and print any warnings
+                // Check and print any warning
                 if (curveData.Rtn != 0)
                 {
                     fs.WriteLine();
 
+                    // check for model consistency warning via bitwise operation with return code
                     if ((curveData.Rtn & Constants.WARNING__DFRAC_TROPO_REGION) == Constants.WARNING__DFRAC_TROPO_REGION)
                         fs.WriteLine(Messages.ModelConsistencyWarning);
                 }
@@ -39,8 +40,8 @@ namespace P528GUI
                 fs.WriteLine();
                 fs.WriteLine($"h_1,{curveData.ModelArgs.h_1__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"h_2,{curveData.ModelArgs.h_2__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{curveData.ModelArgs.f__mhz}");
-                fs.WriteLine($"time,{curveData.ModelArgs.time}");
+                fs.WriteLine($"f__mhz,{curveData.ModelArgs.f__mhz},MHz");
+                fs.WriteLine($"time,{curveData.ModelArgs.time},%");
                 fs.WriteLine($"T_pol,{curveData.ModelArgs.Polarization}");
                 fs.WriteLine();
 
@@ -88,8 +89,8 @@ namespace P528GUI
 
                 fs.WriteLine();
                 fs.WriteLine($"h_2,{curveDatas[0].ModelArgs.h_2__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz}");
-                fs.WriteLine($"time%,{curveDatas[0].ModelArgs.time}");
+                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz},MHz");
+                fs.WriteLine($"time,{curveDatas[0].ModelArgs.time},%");
                 fs.WriteLine();
 
                 if (isRowAligned)
@@ -132,8 +133,8 @@ namespace P528GUI
 
                 fs.WriteLine();
                 fs.WriteLine($"h_1,{curveDatas[0].ModelArgs.h_1__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz}");
-                fs.WriteLine($"time%,{curveDatas[0].ModelArgs.time}");
+                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz},MHz");
+                fs.WriteLine($"time,{curveDatas[0].ModelArgs.time},%");
                 fs.WriteLine();
 
                 if (isRowAligned)
@@ -177,7 +178,7 @@ namespace P528GUI
                 fs.WriteLine();
                 fs.WriteLine($"h_1,{curveDatas[0].ModelArgs.h_1__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
                 fs.WriteLine($"h_2,{curveDatas[0].ModelArgs.h_2__user_units}," + ((GlobalState.Units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz}");
+                fs.WriteLine($"f__mhz,{curveDatas[0].ModelArgs.f__mhz},MHz");
                 fs.WriteLine();
 
                 if (isRowAligned)

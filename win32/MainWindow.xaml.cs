@@ -221,8 +221,8 @@ namespace P528GUI
             // configure x-axis
             _xAxis = new LinearAxis();
             _xAxis.Title = "Distance (km)";
-            _xAxis.Minimum = 0;
-            _xAxis.Maximum = 1800;
+            _xAxis.Minimum = Constants.XAXIS_MIN_DEFAULT; ;
+            _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__KM;
             _xAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
             _xAxis.Position = AxisPosition.Bottom;
             _xAxis.AxisChanged += XAxis_Changed;
@@ -234,8 +234,8 @@ namespace P528GUI
             _yAxis.Position = AxisPosition.Left;
             _yAxis.StartPosition = 1;
             _yAxis.EndPosition = 0;
-            _yAxis.Minimum = 0;
-            _yAxis.Maximum = 300;
+            _yAxis.Minimum = Constants.YAXIS_MIN_DEFAULT;
+            _yAxis.Maximum = Constants.YAXIS_MAX_DEFAULT;
 
             // add axis' to plot
             PlotModel.Axes.Add(_xAxis);
@@ -286,7 +286,7 @@ namespace P528GUI
                 }
             };
 
-            ProgressMsg = Constants.RENDER__MSG;
+            ProgressMsg = Constants.RENDER_MSG;
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_SingleCurveWorkerCompleted;
@@ -312,7 +312,7 @@ namespace P528GUI
                     Polarization = inputControl.Polarization
                 });
 
-            ProgressMsg = Constants.RENDER__MSG;
+            ProgressMsg = Constants.RENDER_MSG;
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
@@ -338,7 +338,7 @@ namespace P528GUI
                     Polarization = inputControl.Polarization
                 });
 
-            ProgressMsg = Constants.RENDER__MSG;
+            ProgressMsg = Constants.RENDER_MSG;
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
@@ -364,7 +364,7 @@ namespace P528GUI
                     Polarization = inputControl.Polarization
                 });
 
-            ProgressMsg = Constants.RENDER__MSG;
+            ProgressMsg = Constants.RENDER_MSG;
 
             // start the background worker
             _worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
@@ -424,7 +424,7 @@ namespace P528GUI
                     curveData.L_fs__db.Add(result.A_fs__db);
                     curveData.PropModes.Add(result.ModeOfPropagation);
 
-                    // interate
+                    // iterate
                     d__user_units += d_step__user_units;
 
                     _worker.ReportProgress(Convert.ToInt32(100 * (i + d__user_units / max) / jobs.Count));
@@ -1064,15 +1064,15 @@ namespace P528GUI
         private void ResetPlotAxis()
         {
             if (GlobalState.Units == Units.Meters)
-                _xAxis.Maximum = 1800;
+                _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__KM;
             else
-                _xAxis.Maximum = 970;
+                _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__MI;
 
-            _xAxis.Minimum = 0;
-            _yAxis.Maximum = 300;
-            _yAxis.Minimum = 100;
+            _xAxis.Minimum = Constants.XAXIS_MIN_DEFAULT;
+            _yAxis.Maximum = Constants.YAXIS_MAX_DEFAULT;
+            _yAxis.Minimum = Constants.YAXIS_MIN_DEFAULT;
 
-            ResetPlotData();
+            plot.ResetAllAxes();
         }
 
         /// <summary>

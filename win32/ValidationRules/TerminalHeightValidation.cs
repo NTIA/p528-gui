@@ -10,7 +10,7 @@ namespace P528GUI.ValidationRules
         private const double MAX_METERS = 20000;
 
         private readonly string InvalidInput__Meter = $"Terminal height must be between {MIN_METERS} and {MAX_METERS} meters, inclusive.";
-        private readonly string InvalidInput__Feet = $"Terminal height must be between 5 and 65616 feet, inclusive.";
+        private readonly string InvalidInput__Feet = $"Terminal height must be between {Math.Round(MIN_METERS / Constants.METER_PER_FOOT, 0)} and {Math.Round(Math.Floor(MAX_METERS / Constants.METER_PER_FOOT), 0)} feet, inclusive.";
 
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {

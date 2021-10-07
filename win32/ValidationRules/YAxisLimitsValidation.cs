@@ -10,7 +10,7 @@ namespace P528GUI.ValidationRules
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             if (!(value is BindingGroup bindingGroup))
-                return new ValidationResult(false, "Invalid use.");
+                return new ValidationResult(false, "Invalid use of validation rule.");
 
             if (bindingGroup.Items.Count == 0)
                 return ValidationResult.ValidResult;
