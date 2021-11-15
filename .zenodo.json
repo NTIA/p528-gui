@@ -18,9 +18,7 @@
             "scheme": "doi",
             "identifier": "10.5281/zenodo.5081072",
             "relation": "references",
-            "resource_type": {
-                "type": "software"
-            }
+            "resource_type": "software"
         }
     ],
 
