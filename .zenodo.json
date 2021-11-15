@@ -1,0 +1,28 @@
+{
+    "creators": [
+        {   
+            "orcid": "0000-0002-7417-4009",
+            "affiliation": "The Institute for Telecommunication Sciences",
+            "name": "Kozma Jr, William"
+        }
+    ],
+
+    "title": "Recommendation ITU-R P.528 GUI, Release 2.0",
+
+    "upload_type": "software",
+
+    "version": "2.0.0",
+
+    "related_identifiers": [
+        {
+            "scheme": "doi",
+            "identifier": "10.5281/zenodo.5081072",
+            "relation": "references",
+            "resource_type": {
+                "type": "software"
+            }
+        }
+    ],
+
+    "keywords": ["Study Group 3", "ITU-R", "P528"]
+}
