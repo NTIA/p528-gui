@@ -1,5 +1,7 @@
 # Rec ITU-R P.528 GUI #
 
+Persistent Identifier: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5703225.svg)](https://doi.org/10.5281/zenodo.5703225)
+
 This code repository contains a Graphical User Interface (GUI) frontend to the [U.S. Reference Implementation](https://github.com/NTIA/p528) of Recommendation ITU-R P.528.  It allows a user to set input parameters and generate a loss-versus-distance curve with modes of propagation (Line-of-Sight, Diffraction, and Troposcatter) identified.
 
 ## Inputs ##
