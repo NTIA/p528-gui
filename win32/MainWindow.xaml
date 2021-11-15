@@ -1,14 +1,23 @@
-﻿<Window x:Class="p528_gui.MainWindow"
+﻿<Window x:Class="P528GUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        xmlns:local="clr-namespace:p528_gui"
-        xmlns:controls="clr-namespace:p528_gui.UserControls"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:local="clr-namespace:P528GUI"
+        xmlns:controls="clr-namespace:P528GUI.UserControls"
         mc:Ignorable="d"
-        Title="ITS ITU-R Rec P.528-4 GUI" Height="600" Width="800"
-        Icon="img\favicon.ico">
+        Title="ITS Recommendation ITU-R P.528-5 GUI" Height="600" Width="800"
+        Icon="img\favicon.ico"
+        Loaded="Window_Loaded">
+    <Window.Resources>
+        <RoutedCommand x:Key="PlotModeCommand"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource PlotModeCommand}" Executed="Command_PlotMode" x:Name="PlotModeCommand"/>
+    </Window.CommandBindings>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -18,15 +27,37 @@
 
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="False"/>
+                <MenuItem Header="Export to CSV..." Name="mi_Export" Click="Mi_Export_Click" IsEnabled="{Binding IsExportable}"/>
+                <MenuItem Header="Save Plot as Image..." Name="mi_SaveAsImage" Click="Mi_SaveAsImage_Click" IsEnabled="{Binding IsSaveable}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Name="mi_Exit" Click="Mi_Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="View" Name="mi_View" Visibility="Visible">
-                <MenuItem Header="Free Space Line" Name="mi_FreeSpace" Click="Mi_FreeSpace_Click" IsCheckable="True" IsChecked="True"/>
-                <MenuItem Header="Highlight Mode of Propagation" Name="mi_ModeOfProp" Click="Mi_ModeOfProp_Click" IsCheckable="True" IsChecked="True"/>
+            <MenuItem Header="Mode" Visibility="Visible" Name="mi_Mode">
+                <MenuItem Header="Single Curve" 
+                              IsChecked="True"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.Single}"/>
+                <MenuItem Header="Multiple Low Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleLowTerminals}"/>
+                <MenuItem Header="Multiple High Terminal Heights" 
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleHighTerminals}"/>
+                <MenuItem Header="Multiple Time Percentages"
+                              Command="{StaticResource PlotModeCommand}"
+                              CommandParameter="{x:Static local:PlotMode.MultipleTimes}"/>
             </MenuItem>
-            <MenuItem Header="Options">
+            <MenuItem Header="View" Visibility="Visible">
+                <MenuItem Header="Show Free Space Line" 
+                          Click="Mi_FreeSpace_Click"
+                          IsCheckable="True" 
+                          IsChecked="{Binding IsFreeSpaceLineVisible}"/>
+                <MenuItem Header="Highlight Mode of Propagation" 
+                          Click="Mi_ModeOfProp_Click" 
+                          IsCheckable="True" 
+                          IsChecked="{Binding IsModeOfPropChecked}"
+                          IsEnabled="{Binding IsModeOfPropEnabled}"/>
+                <Separator/>
                 <MenuItem Header="Units...">
                     <MenuItem Header="Meters/Kilometers" Name="mi_Units_Meters" IsChecked="True" Click="Mi_Units_Meters_Click"/>
                     <MenuItem Header="Feet/Nautical Miles" Name="mi_Units_Feet" IsChecked="False" Click="Mi_Units_Feet_Click"/>
@@ -35,47 +66,42 @@
                     <MenuItem Header="Set Axis Limits" Name="mi_SetAxisLimits" Click="Mi_SetAxisLimits_Click"/>
                     <MenuItem Header="Reset to Defaults" Name="mi_ResetAxisLimits" Click="Mi_ResetAxisLimits_Click"/>
                 </MenuItem>
-                <MenuItem Header="Plot Mode...">
-                    <MenuItem Header="Single Curve" Name="mi_PlotMode_SingleCurve" IsChecked="True" Click="Mi_PlotMode_SingleCurve_Click"/>
-                    <MenuItem Header="Multiple Low Terminal Heights" Name="mi_PlotMode_MultipleLowHeights" IsChecked="False" Click="Mi_PlotMode_MultipleLowHeights_Click"/>
-                    <MenuItem Header="Multiple High Terminal Heights" Name="mi_PlotMode_MultipleHighHeights" IsChecked="False" Click="Mi_PlotMode_MultipleHighHeights_Click"/>
-                    <MenuItem Header="Multiple Time Percentages" Name="mi_PlotMode_MultipleTimePercentages" IsChecked="False" Click="Mi_PlotMode_MultipleTimePercentages_Click"/>
+                <Separator/>
+                <MenuItem Header="Configure...">
+                    <MenuItem Header="Set Plot Title" Click="Mi_View_SetPlotTitle"/>
+                    <MenuItem Header="Line Details" Click="Mi_View_SetLineDetails" IsEnabled="{Binding IsSaveable}"/>
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="About" Name="mi_About" Click="Mi_About_Click"/>
         </Menu>
 
-        <lvc:CartesianChart Name="plot" Grid.Row="1" LegendLocation="Top" Series="{Binding PlotData}" DisableAnimations="True" Margin="3">
-            <lvc:CartesianChart.AxisX>
-                <lvc:Axis Name="xAxis" Title="Distance (km)" Foreground="Black" MinValue="0" MaxValue="1800">
-                    <lvc:Axis.Separator>
-                        <lvc:Separator x:Name="xSeparator" Step="200"/>
-                    </lvc:Axis.Separator>
-                </lvc:Axis>
-            </lvc:CartesianChart.AxisX>
-            <lvc:CartesianChart.AxisY>
-                <lvc:Axis Name="yAxis" Title="Basic Transmission Gain (dB)" Foreground="Black" MaxValue="-100" MinValue="-300">
-                    <lvc:Axis.Separator>
-                        <lvc:Separator x:Name="ySeparator" Step="20"/>
-                    </lvc:Axis.Separator>
-                </lvc:Axis>
-            </lvc:CartesianChart.AxisY>
-            <lvc:CartesianChart.DataTooltip>
-                <local:CustomToolTip x:Name="customToolTip" SelectionMode="OnlySender"/>
-            </lvc:CartesianChart.DataTooltip>
-        </lvc:CartesianChart>
+        <oxy:PlotView Grid.Row="1" Name="plot" Model="{Binding PlotModel}" Margin="3,3,20,3"/>
+        <Grid Grid.Row="1" Name="grid_Working" Visibility="{Binding IsWorking, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid Background="Gray" Opacity="0.5"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ProgressMsg}" HorizontalAlignment="Center"/>
+                    <ProgressBar Name="progressBar" Height="15" Margin="3" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}"/>
+                    <Button Content="Cancel" Width="75" Click="Btn_CancelWork_Click"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
 
         <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                 <TextBlock Name="tb_ConsistencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
-                <TextBlock Name="tb_FrequencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
             </StackPanel>
 
             <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click" TabIndex="8"/>
 
-            <Grid Name="grid_Controls">
-                <controls:SingleCurveInputsControl x:Name="singleCurveInputsCtrl"/>
-            </Grid>
+            <Grid Name="grid_InputControls"/>
         </DockPanel>
     </Grid>
 </Window>

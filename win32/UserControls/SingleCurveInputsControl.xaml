@@ -1,11 +1,20 @@
-﻿<UserControl x:Class="p528_gui.UserControls.SingleCurveInputsControl"
+﻿<UserControl x:Class="P528GUI.UserControls.SingleCurveInputsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:p528_gui.UserControls"
+             xmlns:local="clr-namespace:P528GUI.UserControls"
+             xmlns:vr="clr-namespace:P528GUI.ValidationRules"
              mc:Ignorable="d" 
              d:DesignWidth="800">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/CommonStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -17,18 +26,109 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
 
-        <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="0" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h1" TabIndex="1"/>
-        <Image Name="img_t1" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="..\img\Warning.png" Visibility="Collapsed"/>
-        <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="1" Grid.Column="1" Margin="3" HorizontalAlignment="Stretch" Name="tb_h2" TabIndex="2"/>
-        <Image Name="img_t2" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Stretch="None" Margin="3" Source="..\img\Warning.png" Visibility="Collapsed"/>
+        <Grid Name="grid_Terminals" 
+              Grid.Row="0" Grid.RowSpan="2"
+              Grid.Column="0" Grid.ColumnSpan="2"
+              Validation.Error="TextBox_Error">
+            <Grid.BindingGroup>
+                <BindingGroup Name="terminalBindingGroup" NotifyOnValidationError="True">
+                    <BindingGroup.ValidationRules>
+                        <vr:TerminalRelationshipValidation ValidatesOnTargetUpdated="True" ValidationStep="UpdatedValue"/>
+                    </BindingGroup.ValidationRules>
+                </BindingGroup>
+            </Grid.BindingGroup>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.Column="3" Text="Frequency (MHz):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="0" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_freq" TabIndex="3"/>
-        <TextBlock Grid.Row="1" Grid.Column="3" Text="Time Percentage (%):" Margin="3" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="1" Grid.Column="4" Margin="3" HorizontalAlignment="Stretch" Name="tb_time" TabIndex="4"/>
+            <TextBlock Name="tb_t1" Grid.Row="0" Grid.Column="0" Text="Terminal 1 Height (m):"/>
+            <TextBox Grid.Row="0" Grid.Column="1" TabIndex="1" Validation.Error="TextBox_Error" TextChanged="TextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="h_1"
+                             BindingGroupName="terminalBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="OneWayToSource"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="5">
+                        <Binding.ValidationRules>
+                            <vr:TerminalHeightValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBlock Name="tb_t2" Grid.Row="1" Grid.Column="0" Text="Terminal 2 Height (m):"/>
+            <TextBox Grid.Row="1" Grid.Column="1" TabIndex="2" Validation.Error="TextBox_Error" TextChanged="TextBox_TextChanged">
+                <TextBox.Text>
+                    <Binding Path="h_2"
+                             BindingGroupName="terminalBindingGroup"
+                             UpdateSourceTrigger="PropertyChanged"
+                             ValidatesOnDataErrors="True"
+                             NotifyOnValidationError="True"
+                             Mode="OneWayToSource"
+                             Converter="{StaticResource doubleConverter}"
+                             FallbackValue="10000">
+                        <Binding.ValidationRules>
+                            <vr:TerminalHeightValidation/>
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </Grid>
+        
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Polarization:"/>
+        <ComboBox Grid.Row="2" Grid.Column="1" TabIndex="7"
+                  ItemsSource="{Binding Source={StaticResource enumPolarization}, Converter={StaticResource polarizationConverter}}"
+                  SelectedItem="{Binding Path=Polarization}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock Grid.Row="0" Grid.Column="3" Text="Frequency (MHz):"/>
+        <TextBox Grid.Row="0" Grid.Column="4" TabIndex="3" Validation.Error="TextBox_Error">
+            <TextBox.Text>
+                <Binding Path="f__mhz"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="5000">
+                    <Binding.ValidationRules>
+                        <vr:FrequencyValidation/>
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
+        
+        <TextBlock Grid.Row="1" Grid.Column="3" Text="Time Percentage (%):"/>
+        <TextBox Grid.Row="1" Grid.Column="4" TabIndex="4" Validation.Error="TextBox_Error">
+            <TextBox.Text>
+                <Binding Path="time"
+                         UpdateSourceTrigger="PropertyChanged"
+                         ValidatesOnDataErrors="True"
+                         NotifyOnValidationError="True"
+                         Mode="OneWayToSource"
+                         Converter="{StaticResource doubleConverter}"
+                         FallbackValue="50">
+                    <Binding.ValidationRules>
+                        <vr:TimeValidation/>
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
     </Grid>
 </UserControl>

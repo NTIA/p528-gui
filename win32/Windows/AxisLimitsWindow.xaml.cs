@@ -1,84 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
-namespace p528_gui.Windows
+namespace P528GUI.Windows
 {
-    public partial class AxisLimitsWindow : Window
+    public partial class AxisLimitsWindow : Window, INotifyPropertyChanged
     {
-        private double _xAxisMin;
+        private double _xAxisMinimum = 0;
         public double XAxisMinimum
         {
-            get { return _xAxisMin; }
+            get { return _xAxisMinimum; }
             set
             {
-                _xAxisMin = value;
-                tb_xAxisMinimum.Text = _xAxisMin.ToString();
+                _xAxisMinimum = value;
+                OnPropertyChanged();
             }
         }
 
-        private double _xAxisMax;
+        private double _xAxixMaximum = 1800;
         public double XAxisMaximum
         {
-            get { return _xAxisMax; }
+            get { return _xAxixMaximum; }
             set
             {
-                _xAxisMax = value;
-                tb_xAxisMaximum.Text = _xAxisMax.ToString();
+                _xAxixMaximum = value;
+                OnPropertyChanged();
             }
         }
 
-        private double _xAxisStep;
-        public double XAxisStep
-        {
-            get { return _xAxisStep; }
-            set
-            {
-                _xAxisStep = value;
-                tb_xAxisStep.Text = _xAxisStep.ToString();
-            }
-        }
-
-        private double _yAxisMin;
+        private double _yAxisMinimum = 0;
         public double YAxisMinimum
         {
-            get { return _yAxisMin; }
+            get { return _yAxisMinimum; }
             set
             {
-                _yAxisMin = value;
-                tb_yAxisMinimum.Text = _yAxisMin.ToString();
+                _yAxisMinimum = value;
+                OnPropertyChanged();
             }
         }
 
-        private double _yAxisMax;
+        private double _yAxisMaximum = 300;
         public double YAxisMaximum
         {
-            get { return _yAxisMax; }
+            get { return _yAxisMaximum; }
             set
             {
-                _yAxisMax = value;
-                tb_yAxisMaximum.Text = _yAxisMax.ToString();
-            }
-        }
-
-        private double _yAxisStep;
-        public double YAxisStep
-        {
-            get { return _yAxisStep; }
-            set
-            {
-                _yAxisStep = value;
-                tb_yAxisStep.Text = _yAxisStep.ToString();
+                _yAxisMaximum = value;
+                OnPropertyChanged();
             }
         }
 
@@ -88,20 +57,39 @@ namespace p528_gui.Windows
             {
                 tb_xAxisMinimumUnits.Text = value;
                 tb_xAxisMaximumUnits.Text = value;
-                tb_xAxisStepUnits.Text = value;
             }
         }
+
+        private int _errorCnt = 0;
+        public int ErrorCnt
+        {
+            get { return _errorCnt; }
+            set
+            {
+                _errorCnt = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public AxisLimitsWindow()
         {
             InitializeComponent();
+
+            DataContext = this;
+        }
+
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
+        {
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
+            else
+                ErrorCnt--;
         }
 
         private void btn_Apply_Click(object sender, RoutedEventArgs e)
         {
-            if (!Validate())
-                return;
-
             this.DialogResult = true;
             this.Close();
         }
@@ -112,92 +100,11 @@ namespace p528_gui.Windows
             this.Close();
         }
 
-        private bool Validate()
-        {
-            if (String.IsNullOrEmpty(tb_xAxisMinimum.Text) ||
-                !Double.TryParse(tb_xAxisMinimum.Text, out double xMin) ||
-                xMin < 0)
-            {
-                Tools.ValidationError(tb_xAxisMinimum);
-                MessageBox.Show("Minimum value for X-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisMinimum);
-                _xAxisMin = xMin;
-            }
+        protected void OnPropertyChanged([CallerMemberName] string name = null) 
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-            if (String.IsNullOrEmpty(tb_xAxisMaximum.Text) ||
-                !Double.TryParse(tb_xAxisMaximum.Text, out double xMax) ||
-                xMax <= _xAxisMin)
-            {
-                Tools.ValidationError(tb_xAxisMaximum);
-                MessageBox.Show("Maximum value for X-Axis must be greater then minimum for X-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisMaximum);
-                _xAxisMax = xMax;
-            }
+        private void XAxisTextBox_TextChanged(object sender, TextChangedEventArgs e) => grid_XAxis?.BindingGroup.CommitEdit();
 
-            if (String.IsNullOrEmpty(tb_xAxisStep.Text) ||
-                !Double.TryParse(tb_xAxisStep.Text, out double xStep) ||
-                xStep <= 0)
-            {
-                Tools.ValidationError(tb_xAxisStep);
-                MessageBox.Show("Step value for X-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_xAxisStep);
-                _xAxisStep = xStep;
-            }
-
-            if (String.IsNullOrEmpty(tb_yAxisMinimum.Text) ||
-                !Double.TryParse(tb_yAxisMinimum.Text, out double yMin))
-            {
-                Tools.ValidationError(tb_yAxisMinimum);
-                MessageBox.Show("Unable to parse minimum value for Y-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisMinimum);
-                _yAxisMin = yMin;
-            }
-
-            if (String.IsNullOrEmpty(tb_yAxisMaximum.Text) ||
-                !Double.TryParse(tb_yAxisMaximum.Text, out double yMax) ||
-                yMax <= _yAxisMin)
-            {
-                Tools.ValidationError(tb_yAxisMaximum);
-                MessageBox.Show("Maximum value for Y-Axis must be greater then minimum for Y-Axis");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisMaximum);
-                _yAxisMax = yMax;
-            }
-
-            if (String.IsNullOrEmpty(tb_yAxisStep.Text) ||
-                !Double.TryParse(tb_yAxisStep.Text, out double yStep) ||
-                yStep <= 0)
-            {
-                Tools.ValidationError(tb_yAxisStep);
-                MessageBox.Show("Step value for Y-Axis must be greater than zero");
-                return false;
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_yAxisStep);
-                _yAxisStep = yStep;
-            }
-
-            return true;
-        }
+        private void YAxisTextBox_TextChanged(object sender, TextChangedEventArgs e) => grid_YAxis?.BindingGroup.CommitEdit();
     }
 }

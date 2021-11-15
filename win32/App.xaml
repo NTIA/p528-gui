@@ -1,7 +1,7 @@
-﻿<Application x:Class="p528_gui.App"
+﻿<Application x:Class="P528GUI.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:p528_gui"
+             xmlns:local="clr-namespace:P528GUI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

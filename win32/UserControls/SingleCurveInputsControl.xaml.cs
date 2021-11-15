@@ -1,106 +1,94 @@
-﻿using p528_gui.Interfaces;
+﻿using ITS.Propagation;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-namespace p528_gui.UserControls
+namespace P528GUI.UserControls
 {
-    public partial class SingleCurveInputsControl : UserControl, IUnitEnabled, IInputValidation
+    public partial class SingleCurveInputsControl : UserControl, INotifyPropertyChanged
     {
-        private Units _units;
-        public Units Units
+        #region Private Fields
+
+        private int _errorCnt = 0;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
+
+        /// <summary>
+        /// High terminal height, in user defined units
+        /// </summary>
+        public double h_2 { get; set; }
+
+        /// <summary>
+        /// Frequency, in MHz
+        /// </summary>
+        public double f__mhz { get; set; }
+
+        /// <summary>
+        /// Time percentage
+        /// </summary>
+        public double time { get; set; }
+
+        /// <summary>
+        /// Polarization
+        /// </summary>
+        public P528.Polarization Polarization { get; set; }
+
+        /// <summary>
+        /// Number of validation errors
+        /// </summary>
+        public int ErrorCnt
         {
-            get { return _units; }
+            get { return _errorCnt; }
             set
             {
-                _units = value;
-                tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-                tb_t2.Text = "Terminal 2 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+                _errorCnt = value;
+                OnPropertyChanged();
             }
         }
 
-        public double H1 { get; private set; }
+        #endregion
 
-        public double H2 { get; private set; }
-
-        public double FMHZ { get; set; }
-
-        public double TIME { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public SingleCurveInputsControl()
         {
             InitializeComponent();
 
-            img_t1.ToolTip = Messages.TerminalHeightWarning;
-            img_t2.ToolTip = Messages.TerminalHeightWarning;
+            GlobalState.UnitsChanged += GlobalState_UnitsChanged;
+
+            DataContext = this;
         }
 
-        /// <summary>
-        /// Validate user specified inputs
-        /// </summary>
-        /// <returns>Did input validation succeed?</returns>
-        public bool AreInputsValid()
+        private void GlobalState_UnitsChanged(object sender, EventArgs e)
         {
-            if (!Tools.ValidateH1(tb_h1.Text, _units, out double h1))
-                return Tools.ValidationError(tb_h1);
-            else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h1;
+            tb_t1.Text = "Terminal 1 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+            tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
 
-                img_t1.Visibility = (Tools.ConvertSpecifiedUnitsToKm(H1, _units) <= Constants.TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (!Tools.ValidateH2(tb_h2.Text, _units, out double h2))
-                return Tools.ValidationError(tb_h2);
-            else
-            {
-                Tools.ValidationSuccess(tb_h2);
-                H2 = h2;
-
-                img_t2.Visibility = (Tools.ConvertSpecifiedUnitsToKm(H2, _units) <= Constants.TOP_OF_ATMOSPHERE__KM) ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (h1 > h2)
-            {
-                Tools.ValidationError(tb_h1);
-                Tools.ValidationError(tb_h2);
-                MessageBox.Show(Messages.Terminal1LessThan2Error);
-            }
-            else
-            {
-                Tools.ValidationSuccess(tb_h1);
-                Tools.ValidationSuccess(tb_h2);
-            }
-
-            if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
-                return Tools.ValidationError(tb_freq);
-            else
-            {
-                Tools.ValidationSuccess(tb_freq);
-                FMHZ = f__mhz;
-            }
-
-            if (!Tools.ValidateTIME(tb_time.Text, out double time))
-                return Tools.ValidationError(tb_time);
-            else
-            {
-                Tools.ValidationSuccess(tb_time);
-                TIME = time / 100;
-            }
-
-            return true;
+            // Need to manually force validation since it only triggers during text updates
+            foreach (var child in grid_Terminals.Children)
+                if (child is TextBox)
+                   (child as TextBox).GetBindingExpression(TextBox.TextProperty).UpdateSource();
         }
+
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
+        {
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
+            else
+                ErrorCnt--;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) => 
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e) => grid_Terminals?.BindingGroup.CommitEdit();
     }
 }

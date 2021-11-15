@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.421
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P528-Visualizer", "P528-Visualizer.csproj", "{8B083C15-A7E7-411F-A5D9-06EFAAFB96BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P528GUI", "P528GUI.csproj", "{8B083C15-A7E7-411F-A5D9-06EFAAFB96BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

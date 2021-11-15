@@ -1,992 +1,1254 @@
-﻿using LiveCharts;
-using LiveCharts.Defaults;
-using LiveCharts.Wpf;
+﻿using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
 using Microsoft.Win32;
-using p528_gui.Interfaces;
-using p528_gui.UserControls;
-using p528_gui.Windows;
+using P528GUI.UserControls;
+using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using ITS.Propagation;
+using P528GUI.Converters;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-namespace p528_gui
+namespace P528GUI
 {
-    public enum Units
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        Meters,
-        Feet
-    }
+        #region Private Fields 
 
-    public enum ApplicationMode
-    {
-        SingleCurve,
-        MultipleHeights,
-        MultipleTimes
-    }
+        /// <summary>
+        /// X-axis for the plot
+        /// </summary>
+        private readonly LinearAxis _xAxis;
 
-    public partial class MainWindow : Window
-    {
-        [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "Main")]
-        internal static extern int P528(double d__km, double h_1__meter, double h_2__meter, double f__mhz, double time_percentage, ref CResult result);
+        /// <summary>
+        /// Y-axis for the plot
+        /// </summary>
+        private readonly LinearAxis _yAxis;
 
-        [DllImport("p528.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, EntryPoint = "MainEx")]
-        internal static extern int P528EX(double d__km, double h_1__meter, double h_2__meter, double f__mhz, double time_percentage, ref CResult result,
-            ref Terminal terminal_1, ref Terminal terminal_2, ref TroposcatterParams tropo, ref Path path, ref LineOfSightParams los_params);
+        /// <summary>
+        /// BackgroundWorker that handles data generation on a different thread
+        /// </summary>
+        private BackgroundWorker _worker;
 
-        private const int ERROR_HEIGHT_AND_DISTANCE = 10;
-        private const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
-        private const int WARNING__LOW_FREQUENCY = 0xFF2;
+        /// <summary>
+        /// Backing field for ProgressPercentage
+        /// </summary>
+        private int _progressPercentage { get; set; } = 0;
 
-        public SeriesCollection PlotData { get; set; } = new SeriesCollection();
+        /// <summary>
+        /// Backing field for ProgressMsg
+        /// </summary>
+        private string _progressMsg = String.Empty;
 
-        private const int LOS_SERIES = 0;
-        private const int DFRAC_SERIES = 1;
-        private const int SCAT_SERIES = 2;
-        private const int FS_SERIES = 3;
+        /// <summary>
+        /// Status of the P528 backgroundworker
+        /// </summary>
+        private bool _isWorking { get; set; } = false;
 
-        private Units _units = Units.Meters;
-        private bool _showModeOfProp = true;
-        private bool _showFreeSpaceLine = true;
+        /// <summary>
+        /// Is analysis able to be exported to CSV
+        /// </summary>
+        private bool _isExportable = false;
+
+        /// <summary>
+        /// Is figure able to be saved as image
+        /// </summary>
+        private bool _isSaveable = false;
+
+        /// <summary>
+        /// Is the mode of propagation menu item enabled
+        /// </summary>
+        private bool _isModeOfPropEnabled = false;
+
+        /// <summary>
+        /// Is the mode of propagation menu item checked
+        /// </summary>
+        private bool _isModeOfPropChecked = true;
+
+        /// <summary>
+        /// Shared binding object
+        /// </summary>
+        private Binding _isWorkingBinding;
+
+        /// <summary>
+        /// Default number of steps in plot
+        /// </summary>
+        private int _steps = 500;
+
+        /// <summary>
+        /// Flag if P528 backgroundworker to used _steps or full resolution when generating data
+        /// </summary>
+        private bool _fullResolution = false;
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Data backing the plot UI control
+        /// </summary>
+        public PlotModel PlotModel { get; set; }
+
+        /// <summary>
+        /// Is the propagation mode visible
+        /// </summary>
+        public bool IsModeOfPropChecked
+        {
+            get { return _isModeOfPropChecked; }
+            set
+            {
+                _isModeOfPropChecked = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the propagation mode menu item enabled
+        /// </summary>
+        public bool IsModeOfPropEnabled
+        {
+            get { return _isModeOfPropEnabled; }
+            set
+            {
+                _isModeOfPropEnabled = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the free space basic transmission loss curve visible?
+        /// </summary>
+        public bool IsFreeSpaceLineVisible { get; set; } = true;
+
+        /// <summary>
+        /// Progress precentage of the P528 background worker
+        /// </summary>
+        public int ProgressPercentage
+        {
+            get { return _progressPercentage; }
+            set
+            {
+                _progressPercentage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Message to user on task of P528 backgroudn worker
+        /// </summary>
+        public string ProgressMsg
+        {
+            get { return _progressMsg; }
+            set
+            {
+                _progressMsg = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Status of P528 background worker
+        /// </summary>
+        public bool IsWorking
+        {
+            get { return _isWorking; }
+            set
+            {
+                _isWorking = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the plot in an exportable state
+        /// </summary>
+        public bool IsExportable
+        {
+            get { return _isExportable; }
+            set
+            {
+                _isExportable = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Is the plot in a saveable state
+        /// </summary>
+        public bool IsSaveable
+        {
+            get { return _isSaveable; }
+            set
+            {
+                _isSaveable = value;
+                OnPropertyChanged();
+            }
+        }
+
+        #endregion
 
         private delegate void RenderPlot();
         private RenderPlot Render;
+
+        private delegate void ExportData();
+        private ExportData Export;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        LineSeries _fsSeries;
+        LineSeries _btlSeries;
+        LineSeries _losSeries;
+        LineSeries _dfracSeries;
+        LineSeries _scatSeries;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            PlotModel = new PlotModel() { Title = "P.528 Prediction Results" };
+
+            // configure x-axis
+            _xAxis = new LinearAxis();
+            _xAxis.Title = "Distance (km)";
+            _xAxis.Minimum = Constants.XAXIS_MIN_DEFAULT; ;
+            _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__KM;
+            _xAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _xAxis.Position = AxisPosition.Bottom;
+            _xAxis.AxisChanged += XAxis_Changed;
+
+            // configure y-axis
+            _yAxis = new LinearAxis();
+            _yAxis.Title = "Basic Transmission Loss (dB)";
+            _yAxis.MajorGridlineStyle = OxyPlot.LineStyle.Dot;
+            _yAxis.Position = AxisPosition.Left;
+            _yAxis.StartPosition = 1;
+            _yAxis.EndPosition = 0;
+            _yAxis.Minimum = Constants.YAXIS_MIN_DEFAULT;
+            _yAxis.Maximum = Constants.YAXIS_MAX_DEFAULT;
+
+            // add axis' to plot
+            PlotModel.Axes.Add(_xAxis);
+            PlotModel.Axes.Add(_yAxis);
+
+            // enable data binding
             DataContext = this;
 
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
-            tb_FrequencyWarning.Text = Messages.LowFrequencyWarning;
 
             SetUnits();
 
             Render = RenderSingleCurve;
-        }
 
-        private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
+            InitializeLineSeries();
+
+            _isWorkingBinding = new Binding("IsWorking");
+            _isWorkingBinding.Source = this;
+            _isWorkingBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            _isWorkingBinding.Converter = new BooleanInverterConverter();
+
+            // set up the background worker for P528 data generation
+            _worker = new BackgroundWorker();
+            _worker.DoWork += Worker_RunP528;
+            _worker.WorkerReportsProgress = true;
+            _worker.ProgressChanged += Worker_ProgressChanged;
+            _worker.WorkerSupportsCancellation = true;
+        }
+        
+        #region Render Methods (Prep Background Worker)
 
         private void RenderSingleCurve()
         {
-            var inputConrol = grid_Controls.Children[0] as SingleCurveInputsControl;
-            if (!inputConrol.AreInputsValid())
-                return;
+            IsExportable = false;
 
-            mi_Export.IsEnabled = true;
+            var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
 
-            // convert inputs into metric units
-            var h1__meter = (_units == Units.Meters) ? inputConrol.H1 : (inputConrol.H1 * Constants.METER_PER_FOOT);
-            var h2__meter = (_units == Units.Meters) ? inputConrol.H2 : (inputConrol.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputConrol.FMHZ;
-            double time = inputConrol.TIME;
-
-            int rtn = GetPointsEx(h1__meter, h2__meter, f__mhz, time, out List<Point>btgPoints, 
-                out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
-
-            // Set any warning messages
-            tb_ConsistencyWarning.Visibility = ((rtn & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
-            tb_FrequencyWarning.Visibility = ((rtn & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY) ? Visibility.Visible : Visibility.Collapsed;
-
-            // Plot the data
-            PlotData.Clear();
-            if (_showModeOfProp)
+            // generate list of jobs - only single curve so just 1 job
+            var jobs = new List<ModelArgs>()
             {
-                PlotData.Add(new LineSeries
+                new ModelArgs()
                 {
-                    Title = "Line of Sight",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(losPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = inputControl.h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                }
+            };
 
-                PlotData.Add(new LineSeries
-                {
-                    Title = "Diffraction",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#0072b2"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(dfracPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
+            ProgressMsg = Constants.RENDER_MSG;
 
-                PlotData.Add(new LineSeries
-                {
-                    Title = "Troposcatter",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#e69f00"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(scatPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
-            }
-            else
-            {
-                PlotData.Add(new LineSeries
-                {
-                    Title = "Basic Transmission Gain",
-                    PointGeometry = null,
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#cc79a7"),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(btgPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
-            }
-
-            if (_showFreeSpaceLine)
-            {
-                PlotData.Add(new LineSeries
-                {
-                    Title = "Free Space",
-                    PointGeometry = null,
-                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
-                    StrokeThickness = 1,
-                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
-            }
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_SingleCurveWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
         }
 
         private void RenderMultipleLowHeights()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
-            if (!inputControl.AreInputsValid())
-                return;
+            IsExportable = false;
 
-            mi_Export.IsEnabled = true;
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
 
-            PlotData.Clear();
-
-            // convert inputs into metric units
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            List<double> h_1s__meter = new List<double>();
-            for (int i = 0; i < inputControl.H1s.Count; i++)
-            {
-                double h1 = inputControl.H1s[i];
-                double h_1__meter = (_units == Units.Meters) ? h1 : (h1 * Constants.METER_PER_FOOT);
-
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
-
-                // Plot the data
-                PlotData.Add(new LineSeries
+            foreach (double h_1 in inputControl.h_1s)
+                jobs.Add(new ModelArgs()
                 {
-                    Title = $"{h1} {_units.ToString()}",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
+                    h_1__user_units = h_1,
+                    h_2__user_units = inputControl.h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
                 });
-            }
+
+            ProgressMsg = Constants.RENDER_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleLowHeightsWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
         }
 
         private void RenderMultipleHighHeights()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
-            if (!inputControl.AreInputsValid())
-                return;
+            IsExportable = false;
 
-            mi_Export.IsEnabled = true;
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
 
-            PlotData.Clear();
-
-            // convert inputs into metric units
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            List<double> h_2s__meter = new List<double>();
-            for (int i = 0; i < inputControl.H2s.Count; i++)
-            {
-                double h2 = inputControl.H2s[i];
-                double h_2__meter = (_units == Units.Meters) ? h2 : (h2 * Constants.METER_PER_FOOT);
-
-                int rtn = GetPoints(h_1__meter, h_2__meter, inputControl.FMHZ, inputControl.TIME, out List<Point> pts);
-
-                // Plot the data
-                PlotData.Add(new LineSeries
+            foreach (double h_2 in inputControl.h_2s)
+                jobs.Add(new ModelArgs()
                 {
-                    Title = $"{h2} {_units.ToString()}",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
                 });
-            }
+
+            ProgressMsg = Constants.RENDER_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleHighHeightsWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
         }
 
         private void RenderMultipleTimes()
         {
-            var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
-            if (!inputControl.AreInputsValid())
+            IsExportable = false;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (var time in inputControl.times)
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = inputControl.h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = time,
+                    Polarization = inputControl.Polarization
+                });
+
+            ProgressMsg = Constants.RENDER_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleTimesWorkerCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        #endregion
+
+        #region Background Worker Methods
+
+        /// <summary>
+        /// Main execution code of background worker
+        /// </summary>
+        private void Worker_RunP528(object sender, DoWorkEventArgs e)
+        {
+            // set the UI to reflect work is being done
+            IsWorking = true;
+            _worker.ReportProgress(0);
+
+            // grab the pending jobs
+            var jobs = (List<ModelArgs>)e.Argument;
+
+            // set up List to store job results
+            var jobResults = new List<CurveData>();
+
+            double min = Math.Max(0, _xAxis.Minimum);
+            double max = _xAxis.ActualMaximum;
+
+            // execute jobs
+            for (int i = 0; i < jobs.Count; i++)
+            {
+                var curveData = new CurveData();
+                curveData.ModelArgs = jobs[i];
+
+                // iterate on user-specified units (km or n miles)
+                double d_step__user_units = _fullResolution ? 1 : (max - min) / _steps;
+                double d__user_units = min;
+
+                while (d__user_units <= max)
+                {
+                    var rtn = P528.Invoke(
+                        Tools.ConvertToKm(d__user_units),
+                        Tools.ConvertToMeters(jobs[i].h_1__user_units),
+                        Tools.ConvertToMeters(jobs[i].h_2__user_units), 
+                        jobs[i].f__mhz, 
+                        jobs[i].Polarization, 
+                        jobs[i].time, 
+                        out P528.Result result);
+
+                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
+                    if (rtn != Constants.ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
+                        curveData.Rtn = rtn;
+
+                    // record the result
+                    curveData.d__user_units.Add(Tools.ConvertFromKm(result.d__km));
+                    curveData.L_btl__db.Add(result.A__db);
+                    curveData.L_fs__db.Add(result.A_fs__db);
+                    curveData.PropModes.Add(result.ModeOfPropagation);
+
+                    // iterate
+                    d__user_units += d_step__user_units;
+
+                    _worker.ReportProgress(Convert.ToInt32(100 * (i + d__user_units / max) / jobs.Count));
+                    if (_worker.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        IsWorking = false;
+                        return;
+                    }
+                }
+
+                jobResults.Add(curveData);
+            }
+
+            e.Cancel = false;
+            e.Result = jobResults;
+
+            IsWorking = false;
+            IsExportable = true;
+            IsSaveable = true;
+        }
+
+        /// <summary>
+        /// Report on updated progress of background worker
+        /// </summary>
+        private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+            => ProgressPercentage = e.ProgressPercentage;
+
+        /// <summary>
+        /// Single curve mode job is completed
+        /// </summary>
+        private void Worker_SingleCurveWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_SingleCurveWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
                 return;
 
-            mi_Export.IsEnabled = true;
+            // this is a single curve worker, so we can safely call First()
+            var curveData = ((List<CurveData>)e.Result).First();
 
-            tb_FrequencyWarning.Visibility = (inputControl.FMHZ < 125) ? Visibility.Visible : Visibility.Collapsed;
+            // Set any warning messages
+            tb_ConsistencyWarning.Visibility = ((curveData.Rtn & Constants.WARNING__DFRAC_TROPO_REGION) == Constants.WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
 
-            PlotData.Clear();
+            ResetPlotData();
 
-            double f__mhz = inputControl.FMHZ;
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-
-            List<double> times = new List<double>();
-            for (int i = 0; i < inputControl.TIMEs.Count; i++)
+            // build lines
+            for (int i = 0; i < curveData.d__user_units.Count; i++)
             {
-                double time = inputControl.TIMEs[i];
-
-                int rtn = GetPoints(h_1__meter, h_2__meter, f__mhz, time, out List<Point> pts);
-
-                // Plot the data
-                PlotData.Add(new LineSeries
+                switch (curveData.PropModes[i])
                 {
-                    Title = $"{time * 100}%",
-                    PointGeometry = null,
-                    Stroke = Tools.GetBrush(i),
-                    StrokeThickness = 5,
-                    Values = new ChartValues<ObservablePoint>(pts.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 },
-                });
-            }
-
-            if (_showFreeSpaceLine)
-            {
-                GetPointsEx(h_1__meter, h_2__meter, f__mhz, 0.5, out List<Point> btgPoints, 
-                    out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, true);
-
-                PlotData.Add(new LineSeries
-                {
-                    Title = "Free Space",
-                    PointGeometry = null,
-                    StrokeDashArray = new DoubleCollection(new double[] { 4 }),
-                    Stroke = (SolidColorBrush)new BrushConverter().ConvertFrom("#000000"),
-                    StrokeThickness = 1,
-                    Values = new ChartValues<ObservablePoint>(fsPoints.Select(x => new ObservablePoint(x.X, x.Y))),
-                    Fill = new SolidColorBrush() { Opacity = 0 }
-                });
-            }
-        }
-
-        private int GetPoints(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> lossPoints)
-        {
-            lossPoints = new List<Point>();
-
-            var result = new CResult();
-            int rtn = 0;
-
-            // iterate on user-specified units (km or n miles)
-            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
-            double d = xAxis.MinValue;
-            double d__km, d_out;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
-
-                // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                    rtn = r;
-
-                lossPoints.Add(new Point(d_out, result.A__db));
-
-                d += d_step;
-            }
-
-            return rtn;
-        }
-
-        private int GetPointsEx(double h_1__meter, double h_2__meter, double f__mhz, double time, out List<Point> btgPoints, 
-            out List<Point> losPoints, out List<Point> dfracPoints, out List<Point> scatPoints, out List<Point> fsPoints, bool blendLines)
-        {
-            losPoints = new List<Point>();
-            dfracPoints = new List<Point>();
-            scatPoints = new List<Point>();
-            fsPoints = new List<Point>();
-            btgPoints = new List<Point>();
-
-            bool dfracSwitch = false;
-            bool scatSwitch = false;
-
-            var result = new CResult();
-            int rtn = 0;
-            double d__km, d_out;
-
-            // iterate on user-specified units (km or n miles)
-            double d_step = (xAxis.MaxValue - xAxis.MinValue) / 1500;
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
-
-                // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                    rtn = r;
-
-                switch (result.propagation_mode)
-                {
-                    case 1: // Line-of-Sight
-                        losPoints.Add(new Point(d_out, result.A__db));
+                    case P528.ModeOfPropagation.LineOfSight:
+                        _losSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
-                    case 2: // Diffraction
-                        if (blendLines && !dfracSwitch)
-                        {
-                            losPoints.Add(new Point(d_out, result.A__db));   // Adding to ensure there is no gap in the curve
-                            dfracSwitch = true;
-                        }
-                        dfracPoints.Add(new Point(d_out, result.A__db));
+                    case P528.ModeOfPropagation.Diffraction:
+                        _dfracSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
-                    case 3: // Troposcatter
-                        if (blendLines && !scatSwitch)
-                        {
-                            dfracPoints.Add(new Point(d_out, result.A__db)); // Adding to ensure there is no gap in the curve
-                            scatSwitch = true;
-                        }
-                        scatPoints.Add(new Point(d_out, result.A__db));
+                    case P528.ModeOfPropagation.Troposcatter:
+                        _scatSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
                         break;
                 }
 
-                fsPoints.Add(new Point(d_out, result.A_fs__db));
-                btgPoints.Add(new Point(d_out, result.A__db));
-
-                d += d_step;
+                _btlSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
+                _fsSeries.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_fs__db[i]));
             }
 
-            return rtn;
+            // fill in the gaps between line segments to make continuous
+            _losSeries.Points.Add(_dfracSeries.Points.First());
+            _dfracSeries.Points.Add(_scatSeries.Points.First());
+
+            // add all line series to plot
+            PlotModel.Series.Add(_losSeries);
+            PlotModel.Series.Add(_dfracSeries);
+            PlotModel.Series.Add(_scatSeries);
+            PlotModel.Series.Add(_btlSeries);
+            PlotModel.Series.Add(_fsSeries);
+
+            // redraw the plot
+            plot.InvalidatePlot();
         }
 
-        private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
+        /// <summary>
+        /// Multiple low terminal curves job is completed
+        /// </summary>
+        private void Worker_MultipleLowHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleLowHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
+
+            ResetPlotData();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
+                // Plot the data
+                var series = new LineSeries()
+                {
+                    StrokeThickness = 5,
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.h_1s[j]} {GlobalState.Units}",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+
+                // build line
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
+
+                // add to plot
+                PlotModel.Series.Add(series);
+
+                j++;
+            }
+
+            // redraw the plot
+            plot.InvalidatePlot();
+        }
+
+        /// <summary>
+        /// Multiple high terminal curves job is completed
+        /// </summary>
+        private void Worker_MultipleHighHeightsWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleHighHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
+
+            ResetPlotData();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
+                // Plot the data
+                var series = new LineSeries()
+                {
+                    StrokeThickness = 5,
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.h_2s[j]} {GlobalState.Units}",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+
+                // build line
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
+
+                // add to plot
+                PlotModel.Series.Add(series);
+
+                j++;
+            }
+
+            // redraw the plot
+            plot.InvalidatePlot();
+        }
+
+        /// <summary>
+        /// Multiple times curves job is completed
+        /// </summary>
+        private void Worker_MultipleTimesWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // unsubscribe to future events
+            _worker.RunWorkerCompleted -= Worker_MultipleHighHeightsWorkerCompleted;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            var jobResults = (List<CurveData>)e.Result;
+
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
+
+            ResetPlotData();
+
+            int j = 0;
+            foreach (var curveData in jobResults)
+            {
+                // Plot the data
+                var series = new LineSeries()
+                {
+                    StrokeThickness = 5,
+                    MarkerSize = 0,
+                    LineStyle = OxyPlot.LineStyle.Solid,
+                    Color = ConvertBrushToOxyColor(Tools.GetBrush(j)),
+                    Title = $"{inputControl.times[j]}%",
+                    MarkerType = MarkerType.None,
+                    CanTrackerInterpolatePoints = false
+                };
+
+                // build line
+                for (int i = 0; i < curveData.d__user_units.Count; i++)
+                    series.Points.Add(new DataPoint(curveData.d__user_units[i], curveData.L_btl__db[i]));
+
+                // add to plot
+                PlotModel.Series.Add(series);
+
+                j++;
+            }
+
+            // update free space line
+            _fsSeries.Points.Clear();
+            for (int i = 0; i < jobResults[0].d__user_units.Count; i++)
+                _fsSeries.Points.Add(new DataPoint(jobResults[0].d__user_units[i], jobResults[0].L_fs__db[i]));
+            PlotModel.Series.Add(_fsSeries);
+
+            // redraw the plot
+            plot.InvalidatePlot();
+        }
+
+        #endregion
 
         #region CSV Export Methods
 
-        private void Mi_Export_Click(object sender, RoutedEventArgs e)
+        private void Mi_Export_Click(object sender, RoutedEventArgs e) => Export();
+
+        private void CsvExport_SingleCurveInit()
         {
+            var inputControl = grid_InputControls.Children[0] as SingleCurveInputsControl;
+
+            // generate list of jobs - only single curve so just 1 job
+            var jobs = new List<ModelArgs>()
+            {
+                new ModelArgs()
+                {
+                    h_1__user_units = Tools.ConvertToMeters(inputControl.h_1),
+                    h_2__user_units = Tools.ConvertToMeters(inputControl.h_2),
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                }
+            };
+
+            // set full resolution data
+            _fullResolution = true;
+
+            ProgressMsg = Constants.EXPORT_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_SingleCurveDataExportCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void CsvExport_MultipleLowTerminals()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleLowHeightsInputsControl;
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (double h_1 in inputControl.h_1s)
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__user_units = h_1,
+                    h_2__user_units = inputControl.h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+
+            // set full resolution data
+            _fullResolution = true;
+
+            ProgressMsg = Constants.EXPORT_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleLowHeightsDataExportCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void CsvExport_MultipleHighTerminals()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleHighHeightsInputsControl;
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (double h_2 in inputControl.h_2s)
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = inputControl.time,
+                    Polarization = inputControl.Polarization
+                });
+
+            // set full resolution data
+            _fullResolution = true;
+
+            ProgressMsg = Constants.EXPORT_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleHighHeightsDataExportCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void CsvExport_MultipleTimePercentages()
+        {
+            var inputControl = grid_InputControls.Children[0] as MultipleTimeInputsControl;
+
+            // create a list of jobs
+            var jobs = new List<ModelArgs>();
+
+            foreach (var time in inputControl.times)
+                jobs.Add(new ModelArgs()
+                {
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = inputControl.h_2,
+                    f__mhz = inputControl.f__mhz,
+                    time = time,
+                    Polarization = inputControl.Polarization
+                });
+
+            // set full resolution data
+            _fullResolution = true;
+
+            ProgressMsg = Constants.EXPORT_MSG;
+
+            // start the background worker
+            _worker.RunWorkerCompleted += Worker_MultipleTimesDataExportCompleted;
+            _worker.RunWorkerAsync(jobs);
+        }
+
+        private void Worker_SingleCurveDataExportCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // unsubscribe to future events and reset resolution
+            _worker.RunWorkerCompleted -= Worker_SingleCurveDataExportCompleted;
+            _fullResolution = false;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "CSV file (*.csv)|*.csv";
 
             if (sfd.ShowDialog() != true)
                 return;
 
-            bool result = false;
-            if (mi_PlotMode_SingleCurve.IsChecked)
-                result = CsvExport_SingleCurve(sfd.FileName);
-            if (mi_PlotMode_MultipleLowHeights.IsChecked)
-                result =CsvExport_MultipleLowTerminals(sfd.FileName);
-            if (mi_PlotMode_MultipleHighHeights.IsChecked)
-                result = CsvExport_MultipleHighTerminals(sfd.FileName);
-            if (mi_PlotMode_MultipleTimePercentages.IsChecked)
-                result = CsvExport_MultipleTimePercentages(sfd.FileName);
-
-            if (result)
-                MessageBox.Show("Export Completed");
-        }
-
-        private bool CsvExport_SingleCurve(string filepath)
-        {
-            var inputControl = grid_Controls.Children[0] as SingleCurveInputsControl;
-
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = false };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return false;
+                return;
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            // this is a single curve worker, so we can safely call First()
+            var curveData = ((List<CurveData>)e.Result).First();
 
-            // Regenerate data at 1 km steps for export
-            var A__db = new List<double>();
-            var A_fs__db = new List<double>();
-            var dists = new List<double>();
-            var modes = new List<int>();
-            int warnings = 0;
-            double d__km, d_out;
+            Exporter.ExportSingleCurveData(sfd.FileName, curveData, exportOptionsWndw.IncludeModeOfPropagation,
+                exportOptionsWndw.IncludeFreeSpaceLoss, exportOptionsWndw.IsRowAlignedData);
 
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
-
-            var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
-
-                // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                    warnings = r;
-
-                // convert output distance from P.528 back into user-specified units
-                d_out = (_units == Units.Meters) ? result.d__km : (result.d__km / Constants.KM_PER_NAUTICAL_MILE);
-
-                dists.Add(Math.Round(d_out, 0));
-                A__db.Add(Math.Round(result.A__db, 3));
-                A_fs__db.Add(Math.Round(result.A_fs__db, 3));
-                modes.Add(result.propagation_mode);
-
-                d++;
-            }
-
-            using (var fs = new StreamWriter(filepath))
-            {
-                fs.WriteLine($"Data Generated by the ITS ITU-R Rec P.528-{dll.FileMajorPart} GUI");
-                fs.WriteLine($"Generated on {DateTime.Now.ToShortDateString()}");
-                fs.WriteLine($"App Version,{version.Major}.{version.Minor}.{version.Build}");
-                fs.WriteLine($"P.528-{dll.FileMajorPart} DLL Version,{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}");
-
-                // Check and print any warnings
-                if (warnings != 0)
-                {
-                    fs.WriteLine();
-
-                    if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
-                        fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
-                }
-
-                fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{f__mhz}");
-                fs.WriteLine($"time%,{time * 100}");
-                fs.WriteLine();
-
-                if (exportOptionsWndw.IncludeModeOfPropagation)
-                    fs.WriteLine("Mode of Propagation: 1 = Line-of-Sight; 2 = Diffraction; 3 = Troposcatter\n");
-
-                if (exportOptionsWndw.IsRowAlignedData)
-                {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", dists)}");
-                    fs.WriteLine($"A__db,{String.Join(",", A__db)}");
-                    if (exportOptionsWndw.IncludeFreeSpaceLoss)
-                        fs.WriteLine($"A_fs__db,{String.Join(",", A_fs__db)}");
-                    if (exportOptionsWndw.IncludeModeOfPropagation)
-                        fs.WriteLine($"Mode,{String.Join(",", modes)}");
-                }
-                else
-                {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.Write("A__db");
-                    if (exportOptionsWndw.IncludeFreeSpaceLoss)
-                        fs.Write(",A_fs__db");
-                    if (exportOptionsWndw.IncludeModeOfPropagation)
-                        fs.Write(",PropMode");
-                    fs.WriteLine();
-
-                    for (int i = 0; i < A__db.Count; i++)
-                    {
-                        fs.Write($"{dists[i]},{A__db[i]}");
-                        if (exportOptionsWndw.IncludeFreeSpaceLoss)
-                            fs.Write($",{A_fs__db[i]}");
-                        if (exportOptionsWndw.IncludeModeOfPropagation)
-                            fs.Write($",{modes[i]}");
-                        fs.WriteLine();
-                    }
-                }
-            }
-
-            return true;
+            MessageBox.Show("Export Completed");
         }
 
-        private bool CsvExport_MultipleLowTerminals(string filepath)
+        private void Worker_MultipleLowHeightsDataExportCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleLowHeightsInputsControl;
+            // unsubscribe to future events and reset resolution
+            _worker.RunWorkerCompleted -= Worker_MultipleLowHeightsDataExportCompleted;
+            _fullResolution = false;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "CSV file (*.csv)|*.csv";
+
+            if (sfd.ShowDialog() != true)
+                return;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return false;
+                return;
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            Exporter.ExportMultipleLowHeightsData(sfd.FileName, (List<CurveData>)e.Result, exportOptionsWndw.IsRowAlignedData);
 
-            // Regenerate data at 1 km steps for export
-            var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.H1s.Count; i++)
-                A__db.Add(new List<double>());
-            var dists = new List<double>();
-            int warnings = 0;
-            double d__km;
-
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
-
-            var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                for (int i = 0; i < inputControl.H1s.Count; i++)
-                {
-                    double h_1__meter = (_units == Units.Meters) ? inputControl.H1s[i] : (inputControl.H1s[i] * Constants.METER_PER_FOOT);
-
-                    var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
-
-                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                    if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                        warnings = r;
-
-                    A__db[i].Add(Math.Round(result.A__db, 3));
-                }
-
-                dists.Add(Math.Round(d, 0));
-                d++;
-            }
-
-            using (var fs = new StreamWriter(filepath))
-            {
-                fs.WriteLine($"Data Generated by the ITS ITU-R Rec P.528-{dll.FileMajorPart} GUI");
-                fs.WriteLine($"Generated on {DateTime.Now.ToShortDateString()}");
-                fs.WriteLine($"App Version,{version.Major}.{version.Minor}.{version.Build}");
-                fs.WriteLine($"P.528-{dll.FileMajorPart} DLL Version,{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}");
-
-                // Check and print any warnings
-                if (warnings != 0)
-                {
-                    fs.WriteLine();
-
-                    if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
-                        fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
-                }
-
-                fs.WriteLine();
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{f__mhz}");
-                fs.WriteLine($"time%,{time * 100}");
-                fs.WriteLine();
-
-                if (exportOptionsWndw.IsRowAlignedData)
-                {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.H1s.Count; i++)
-                    {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.WriteLine($"h_1 = {inputControl.H1s[i]} {units},{String.Join(",", A__db[i])}");
-                    }
-                }
-                else
-                {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.H1s.Count; i++)
-                    {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.Write($",h_1 = {inputControl.H1s[i]} {units}");
-                    }
-                    fs.WriteLine();
-
-                    for (int i = 0; i < dists.Count; i++)
-                    {
-                        fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.H1s.Count; j++)
-                            fs.Write($",{A__db[j][i]}");
-
-                        fs.WriteLine();
-                    }
-                }
-            }
-
-            return true;
+            MessageBox.Show("Export Completed");
         }
 
-        private bool CsvExport_MultipleHighTerminals(string filepath)
+        private void Worker_MultipleHighHeightsDataExportCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleHighHeightsInputsControl;
+            // unsubscribe to future events and reset resolution
+            _worker.RunWorkerCompleted -= Worker_MultipleHighHeightsDataExportCompleted;
+            _fullResolution = false;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "CSV file (*.csv)|*.csv";
+
+            if (sfd.ShowDialog() != true)
+                return;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return false;
+                return;
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            Exporter.ExportMultipleHighHeightsData(sfd.FileName, (List<CurveData>)e.Result, exportOptionsWndw.IsRowAlignedData);
 
-            // Regenerate data at 1 km steps for export
-            var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.H2s.Count; i++)
-                A__db.Add(new List<double>());
-            var dists = new List<double>();
-            int warnings = 0;
-            double d__km;
-
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-            double time = inputControl.TIME;
-
-            var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                for (int i = 0; i < inputControl.H2s.Count; i++)
-                {
-                    double h_2__meter = (_units == Units.Meters) ? inputControl.H2s[i] : (inputControl.H2s[i] * Constants.METER_PER_FOOT);
-
-                    var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, time, ref result);
-
-                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                    if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                        warnings = r;
-
-                    A__db[i].Add(Math.Round(result.A__db, 3));
-                }
-
-                dists.Add(Math.Round(d, 0));
-                d++;
-            }
-
-            using (var fs = new StreamWriter(filepath))
-            {
-                fs.WriteLine($"Data Generated by the ITS ITU-R Rec P.528-{dll.FileMajorPart} GUI");
-                fs.WriteLine($"Generated on {DateTime.Now.ToShortDateString()}");
-                fs.WriteLine($"App Version,{version.Major}.{version.Minor}.{version.Build}");
-                fs.WriteLine($"P.528-{dll.FileMajorPart} DLL Version,{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}");
-
-                // Check and print any warnings
-                if (warnings != 0)
-                {
-                    fs.WriteLine();
-
-                    if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
-                        fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
-                }
-
-                fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{f__mhz}");
-                fs.WriteLine($"time%,{time * 100}");
-                fs.WriteLine();
-
-                if (exportOptionsWndw.IsRowAlignedData)
-                {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.H2s.Count; i++)
-                    {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.WriteLine($"h_2 = {inputControl.H2s[i]} {units},{String.Join(",", A__db[i])}");
-                    }
-                }
-                else
-                {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.H2s.Count; i++)
-                    {
-                        var units = (_units == Units.Meters) ? "meters" : "feet";
-                        fs.Write($",h_2 = {inputControl.H2s[i]} {units}");
-                    }
-                    fs.WriteLine();
-
-                    for (int i = 0; i < dists.Count; i++)
-                    {
-                        fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.H2s.Count; j++)
-                            fs.Write($",{A__db[j][i]}");
-
-                        fs.WriteLine();
-                    }
-                }
-            }
-
-            return true;
+            MessageBox.Show("Export Completed");
         }
 
-        private bool CsvExport_MultipleTimePercentages(string filepath)
+        private void Worker_MultipleTimesDataExportCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            var inputControl = grid_Controls.Children[0] as MultipleTimeInputsControl;
+            // unsubscribe to future events and reset resolution
+            _worker.RunWorkerCompleted -= Worker_MultipleTimesDataExportCompleted;
+            _fullResolution = false;
+
+            // check if worker finished its jobs
+            if (e.Cancelled)
+                return;
+
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "CSV file (*.csv)|*.csv";
+
+            if (sfd.ShowDialog() != true)
+                return;
 
             var exportOptionsWndw = new ExportOptionsWindow() { ShowMinimum = true };
             if (!exportOptionsWndw.ShowDialog().Value)
-                return false;
+                return;
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var dll = FileVersionInfo.GetVersionInfo("p528.dll");
+            Exporter.ExportMultipleTimesData(sfd.FileName, (List<CurveData>)e.Result, exportOptionsWndw.IsRowAlignedData);
 
-            // Regenerate data at 1 km steps for export
-            var A__db = new List<List<double>>();
-            for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                A__db.Add(new List<double>());
-            var dists = new List<double>();
-            int warnings = 0;
-            double d__km;
-
-            double h_1__meter = (_units == Units.Meters) ? inputControl.H1 : (inputControl.H1 * Constants.METER_PER_FOOT);
-            double h_2__meter = (_units == Units.Meters) ? inputControl.H2 : (inputControl.H2 * Constants.METER_PER_FOOT);
-            double f__mhz = inputControl.FMHZ;
-
-            var result = new CResult();
-            double d = xAxis.MinValue;
-            while (d <= xAxis.MaxValue)
-            {
-                // convert distance to specified units for input to P.528
-                d__km = (_units == Units.Meters) ? d : (d * Constants.KM_PER_NAUTICAL_MILE);
-
-                for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                {
-                    var r = P528(d__km, h_1__meter, h_2__meter, f__mhz, inputControl.TIMEs[i], ref result);
-
-                    // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                    if (r != ERROR_HEIGHT_AND_DISTANCE && r != 0)
-                        warnings = r;
-
-                    A__db[i].Add(Math.Round(result.A__db, 3));
-                }
-
-                dists.Add(Math.Round(d, 0));
-                d++;
-            }
-
-            using (var fs = new StreamWriter(filepath))
-            {
-                fs.WriteLine($"Data Generated by the ITS ITU-R Rec P.528-{dll.FileMajorPart} GUI");
-                fs.WriteLine($"Generated on {DateTime.Now.ToShortDateString()}");
-                fs.WriteLine($"App Version,{version.Major}.{version.Minor}.{version.Build}");
-                fs.WriteLine($"P.528-{dll.FileMajorPart} DLL Version,{dll.FileMajorPart}.{dll.FileMinorPart}.{dll.FileBuildPart}");
-
-                // Check and print any warnings
-                if (warnings != 0)
-                {
-                    fs.WriteLine();
-
-                    if ((warnings & WARNING__DFRAC_TROPO_REGION) == WARNING__DFRAC_TROPO_REGION)
-                        fs.WriteLine(Messages.ModelConsistencyWarning);
-                    if ((warnings & WARNING__LOW_FREQUENCY) == WARNING__LOW_FREQUENCY)
-                        fs.WriteLine(Messages.LowFrequencyWarning);
-                }
-
-                fs.WriteLine();
-                fs.WriteLine($"h_1,{inputControl.H1}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"h_2,{inputControl.H2}," + ((_units == Units.Meters) ? "meters" : "feet"));
-                fs.WriteLine($"f__mhz,{f__mhz}");
-                fs.WriteLine();
-
-                if (exportOptionsWndw.IsRowAlignedData)
-                {
-                    fs.Write(((_units == Units.Meters) ? "d__km" : "d__n_mile") + ",");
-                    fs.WriteLine($"{String.Join(",", dists)}");
-                    for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                        fs.WriteLine($"time = {inputControl.TIMEs[i]} %,{String.Join(",", A__db[i])}");
-                }
-                else
-                {
-                    fs.Write((_units == Units.Meters) ? "d__km" : "d__n_mile");
-                    for (int i = 0; i < inputControl.TIMEs.Count; i++)
-                        fs.Write($",time = {inputControl.TIMEs[i]} %");
-                    fs.WriteLine();
-
-                    for (int i = 0; i < dists.Count; i++)
-                    {
-                        fs.Write($"{dists[i]}");
-                        for (int j = 0; j < inputControl.TIMEs.Count; j++)
-                            fs.Write($",{A__db[j][i]}");
-
-                        fs.WriteLine();
-                    }
-                }
-            }
-
-            return true;
+            MessageBox.Show("Export Completed");
         }
 
         #endregion
 
-        private void Mi_About_Click(object sender, RoutedEventArgs e)
-        {
-            var aboutWindow = new AboutWindow();
-            aboutWindow.ShowDialog();
-        }
+        #region Menu Event Handlers
 
+        /// <summary>
+        /// Exit the application
+        /// </summary>
+        private void Mi_Exit_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        /// <summary>
+        /// Update the visibility of the free space transmission loss line
+        /// </summary>
         private void Mi_FreeSpace_Click(object sender, RoutedEventArgs e)
         {
-            _showFreeSpaceLine = mi_FreeSpace.IsChecked;
-
-            Render();
+            _fsSeries.IsVisible = IsFreeSpaceLineVisible;
+            plot.InvalidatePlot();
         }
 
+        /// <summary>
+        /// Update the visibility of the model of propagation data
+        /// </summary>
+        private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
+        {
+            _losSeries.IsVisible = IsModeOfPropChecked;
+            _dfracSeries.IsVisible = IsModeOfPropChecked;
+            _scatSeries.IsVisible = IsModeOfPropChecked;
+            _btlSeries.IsVisible = !IsModeOfPropChecked;
+
+            plot.InvalidatePlot();
+        }
+
+        /// <summary>
+        /// Show the About window
+        /// </summary>
+        private void Mi_About_Click(object sender, RoutedEventArgs e)
+            => new AboutWindow().ShowDialog();
+
+        /// <summary>
+        /// Set units to Meters
+        /// </summary>
         private void Mi_Units_Meters_Click(object sender, RoutedEventArgs e)
         {
             mi_Units_Meters.IsChecked = true;
             mi_Units_Feet.IsChecked = false;
-            _units = Units.Meters;
+
+            GlobalState.Units = Units.Meters;
 
             SetUnits();
         }
 
+        /// <summary>
+        /// Set units to Feet
+        /// </summary>
         private void Mi_Units_Feet_Click(object sender, RoutedEventArgs e)
         {
             mi_Units_Feet.IsChecked = true;
             mi_Units_Meters.IsChecked = false;
-            _units = Units.Feet;
+
+            GlobalState.Units = Units.Feet;
 
             SetUnits();
-        }
-
-        private void SetUnits()
-        {
-            // Update text
-            (grid_Controls.Children[0] as IUnitEnabled).Units = _units;
-            xAxis.Title = "Distance " + ((_units == Units.Meters) ? "(km)" : "(n mile)");
-            ResetPlot();
-            customToolTip.Units = _units;
-
-            // Clear plot data
-            PlotData.Clear();
         }
 
         private void Mi_SetAxisLimits_Click(object sender, RoutedEventArgs e)
         {
             var limitsWndw = new AxisLimitsWindow()
             {
-                XAxisUnit = (_units == Units.Meters) ? "km" : "n mile",
-                XAxisMaximum = xAxis.MaxValue,
-                XAxisMinimum = xAxis.MinValue,
-                XAxisStep = xSeparator.Step,
-                YAxisMaximum = yAxis.MaxValue,
-                YAxisMinimum = yAxis.MinValue,
-                YAxisStep = ySeparator.Step
+                XAxisUnit = (GlobalState.Units == Units.Meters) ? "km" : "n mile",
+                XAxisMaximum = _xAxis.Maximum,
+                XAxisMinimum = _xAxis.Minimum,
+                YAxisMaximum = _yAxis.Maximum,
+                YAxisMinimum = _yAxis.Minimum,
             };
 
             if (!limitsWndw.ShowDialog().Value)
                 return;
 
-            xAxis.MaxValue = limitsWndw.XAxisMaximum;
-            xAxis.MinValue = limitsWndw.XAxisMinimum;
-            xSeparator.Step = limitsWndw.XAxisStep;
+            _xAxis.Maximum = limitsWndw.XAxisMaximum;
+            _xAxis.Minimum = limitsWndw.XAxisMinimum;
 
-            yAxis.MaxValue = limitsWndw.YAxisMaximum;
-            yAxis.MinValue = limitsWndw.YAxisMinimum;
-            ySeparator.Step = limitsWndw.YAxisStep;
+            _yAxis.Maximum = limitsWndw.YAxisMaximum;
+            _yAxis.Minimum = limitsWndw.YAxisMinimum;
+
+            plot.InvalidatePlot();
         }
 
-        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlot();
-        
-        private void ResetPlot()
+        private void Mi_ResetAxisLimits_Click(object sender, RoutedEventArgs e) => ResetPlotAxis();
+
+        private void Mi_SaveAsImage_Click(object sender, RoutedEventArgs e)
         {
-            if (_units == Units.Meters)
-                xAxis.MaxValue = 1800;
+            var fileDialog = new SaveFileDialog
+            {
+                DefaultExt = ".png",
+                Filter = "Portable Network Graphics (.png)|*.png"
+            };
+
+            if (fileDialog.ShowDialog().Value)
+            {
+                var pngExporter = new OxyPlot.Wpf.PngExporter
+                {
+                    Width = 600,
+                    Height = 400,
+                    Background = OxyColors.White,
+                };
+                OxyPlot.Wpf.ExporterExtensions.ExportToFile(pngExporter, PlotModel, fileDialog.FileName);
+            }
+        }
+
+        private void Mi_View_SetPlotTitle(object sender, RoutedEventArgs e)
+        {
+            var wndw = new PlotTitleWindow();
+            if (!wndw.ShowDialog().Value)
+                return;
+
+            PlotModel.Title = wndw.PlotTitle;
+            plot.InvalidatePlot();
+        }
+
+        private void Mi_View_SetLineDetails(object sender, RoutedEventArgs e)
+        {
+            // gather current line details
+            var lineDetails = new List<LineDetails>();
+            foreach (LineSeries series in PlotModel.Series)
+            {
+                lineDetails.Add(new LineDetails()
+                {
+                    Label = series.Title,
+                    Thickness = series.StrokeThickness,
+                    LineStyle = (UserControls.LineStyle)(int)series.LineStyle,
+                    LineColor = Tools.LineColors.Keys.Single(c => c.Color.R == series.Color.R && c.Color.G == series.Color.G && c.Color.B == series.Color.B)
+                });
+            }
+
+            var wndw = new ConfigureLineDetailsWindow() { LineDetails = lineDetails };
+            if (!wndw.ShowDialog().Value)
+                return;
+
+            // update plot with user defined info
+            for (int i = 0; i < PlotModel.Series.Count; i++)
+            {
+                var details = wndw.LineDetails[i];
+                var series = (LineSeries)PlotModel.Series[i];
+
+                series.Title = details.Label;
+                series.LineStyle = (OxyPlot.LineStyle)(int)details.LineStyle;
+                series.Color = ConvertBrushToOxyColor(details.LineColor);
+                series.StrokeThickness = details.Thickness;
+            }
+
+            plot.InvalidatePlot();
+        }
+
+        #endregion
+
+        #region Non-Menu Event Handlers
+
+        /// <summary>
+        /// Program initialization method - fired at startup
+        /// </summary>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // initialized application for Single Curve Mode
+            var command = PlotModeCommand.Command;
+            command.Execute(PlotMode.Single);
+        }
+
+        /// <summary>
+        /// Cancel the background worker
+        /// </summary>
+        private void Btn_CancelWork_Click(object sender, RoutedEventArgs e)
+            => _worker.CancelAsync();
+
+        private void Btn_Render_Click(object sender, RoutedEventArgs e) => Render();
+
+        private void XAxis_Changed(object sender, AxisChangedEventArgs e) => IsExportable = false;
+
+        #endregion
+
+        private void SetUnits()
+        {
+            if (grid_InputControls.Children.Count == 0)
+                return;
+
+            // Update text
+            _xAxis.Title = "Distance " + ((GlobalState.Units == Units.Meters) ? "(km)" : "(n mile)");
+            ResetPlotAxis();
+        }
+
+        private void ResetPlotAxis()
+        {
+            if (GlobalState.Units == Units.Meters)
+                _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__KM;
             else
-                xAxis.MaxValue = 970;
+                _xAxis.Maximum = Constants.XAXIS_MAX_DEFAULT__MI;
 
-            xAxis.MinValue = 0;
-            xSeparator.Step = 200;
-            yAxis.MaxValue = -100;
-            yAxis.MinValue = -300;
-            ySeparator.Step = 20;
+            _xAxis.Minimum = Constants.XAXIS_MIN_DEFAULT;
+            _yAxis.Maximum = Constants.YAXIS_MAX_DEFAULT;
+            _yAxis.Minimum = Constants.YAXIS_MIN_DEFAULT;
 
-            Render?.Invoke();
+            plot.ResetAllAxes();
         }
 
-        private void Mi_PlotMode_SingleCurve_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Clear the plot and its line series of all data
+        /// </summary>
+        private void ResetPlotData()
         {
-            Render = RenderSingleCurve;
+            // clear the plot of any data series
+            PlotModel.Series.Clear();
 
-            mi_PlotMode_SingleCurve.IsChecked = true;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
+            // clear lines series of data points
+            _losSeries.Points.Clear();
+            _dfracSeries.Points.Clear();
+            _scatSeries.Points.Clear();
+            _btlSeries.Points.Clear();
+            _fsSeries.Points.Clear();
 
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new SingleCurveInputsControl() { Units = _units });
-            PlotData.Clear();
-            mi_View.Visibility = Visibility.Visible;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
+            plot.InvalidatePlot();
         }
 
-        private void Mi_PlotMode_MultipleHighHeights_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Controls the application mode with respect to the type of plot generated
+        /// </summary>
+        void Command_PlotMode(object sender, ExecutedRoutedEventArgs e)
         {
-            Render = RenderMultipleHighHeights;
+            // grab the command parameter
+            var plotMode = (PlotMode)e.Parameter;
 
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = true;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
+            // set the appropriate menu check
+            foreach (MenuItem mi in mi_Mode.Items)
+                mi.IsChecked = (PlotMode)mi.CommandParameter == plotMode;
 
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleHighHeightsInputsControl() { Units = _units });
-            PlotData.Clear();
-            mi_View.Visibility = Visibility.Collapsed;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
+            // if the background worker is busy, cancel its job
+            if (_worker.IsBusy)
+                _worker.CancelAsync();
+
+            // reset the UI
+            grid_InputControls.Children.Clear();
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
+
+            UserControl userControl = null;            
+
+            // set the application with the correct UI elements and configuration
+            switch (plotMode)
+            {
+                case PlotMode.Single:
+                    Render = RenderSingleCurve;
+                    Export = CsvExport_SingleCurveInit;
+
+                    userControl = new SingleCurveInputsControl();
+
+                    IsModeOfPropEnabled = true;
+                    IsModeOfPropChecked = true;
+                    break;
+
+                case PlotMode.MultipleLowTerminals:
+                    Render = RenderMultipleLowHeights;
+                    Export = CsvExport_MultipleLowTerminals;
+
+                    userControl = new MultipleLowHeightsInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+
+                case PlotMode.MultipleHighTerminals:
+                    Render = RenderMultipleHighHeights;
+                    Export = CsvExport_MultipleHighTerminals;
+
+                    userControl = new MultipleHighHeightsInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+
+                case PlotMode.MultipleTimes:
+                    Render = RenderMultipleTimes;
+                    Export = CsvExport_MultipleTimePercentages;
+
+                    userControl = new MultipleTimeInputsControl();
+
+                    IsModeOfPropEnabled = false;
+                    IsModeOfPropChecked = false;
+                    break;
+            }
+
+            grid_InputControls.Children.Add(userControl);
+
+            // define binding for input validation errors
+            Binding inputErrorBinding = new Binding("ErrorCnt");
+            inputErrorBinding.Source = userControl;
+            inputErrorBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            inputErrorBinding.Converter = new IntegerToBooleanConverter();
+
+            // define multibinding for Render button to both input validation and background worker status
+            MultiBinding multiBinding = new MultiBinding();
+            multiBinding.Bindings.Add(inputErrorBinding);
+            multiBinding.Bindings.Add(_isWorkingBinding);
+            multiBinding.UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged;
+            multiBinding.Converter = new MultipleBooleanAndConverter();
+
+            // set bindings
+            BindingOperations.SetBinding(userControl, IsEnabledProperty, _isWorkingBinding);
+            BindingOperations.SetBinding(btn_Render, IsEnabledProperty, multiBinding);
+
+            // force update the view
+            PlotModel.Series.Clear();
+            plot.InvalidatePlot();
+            GlobalState.Units = GlobalState.Units;
         }
 
-        private void Mi_PlotMode_MultipleTimePercentages_Click(object sender, RoutedEventArgs e)
+        private void InitializeLineSeries()
         {
-            Render = RenderMultipleTimes;
+            // set up free space loss line and bind it to boolean
+            _fsSeries = new LineSeries()
+            {
+                StrokeThickness = 1,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Dot,
+                Color = ConvertBrushToOxyColor(Brushes.Black),
+                Title = "Free Space",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsFreeSpaceLineVisible
+            };
 
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = false;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = true;
+            _btlSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Green),
+                Title = "Basic Transmission Loss",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = !IsModeOfPropChecked
+            };
 
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleTimeInputsControl() { Units = _units });
-            PlotData.Clear();
-            mi_View.Visibility = Visibility.Visible;
-            mi_ModeOfProp.Visibility = Visibility.Collapsed;
+            _losSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Red),
+                Title = "Line of Sight",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
+
+            _dfracSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Blue),
+                Title = "Diffraction",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
+
+            _scatSeries = new LineSeries()
+            {
+                StrokeThickness = 5,
+                MarkerSize = 0,
+                LineStyle = OxyPlot.LineStyle.Solid,
+                Color = ConvertBrushToOxyColor(Brushes.Orange),
+                Title = "Troposcatter",
+                MarkerType = MarkerType.None,
+                CanTrackerInterpolatePoints = false,
+                IsVisible = IsModeOfPropChecked
+            };
         }
 
-        private void Mi_ModeOfProp_Click(object sender, RoutedEventArgs e)
-        {
-            _showModeOfProp = mi_ModeOfProp.IsChecked;
-
-            Render();
-        }
-
-        private void Mi_PlotMode_MultipleLowHeights_Click(object sender, RoutedEventArgs e)
-        {
-            Render = RenderMultipleLowHeights;
-
-            mi_PlotMode_SingleCurve.IsChecked = false;
-            mi_PlotMode_MultipleLowHeights.IsChecked = true;
-            mi_PlotMode_MultipleHighHeights.IsChecked = false;
-            mi_PlotMode_MultipleTimePercentages.IsChecked = false;
-
-            grid_Controls.Children.Clear();
-            grid_Controls.Children.Add(new MultipleLowHeightsInputsControl() { Units = _units });
-            PlotData.Clear();
-            mi_View.Visibility = Visibility.Collapsed;
-            mi_ModeOfProp.Visibility = Visibility.Visible;
-        }
+        OxyColor ConvertBrushToOxyColor(Brush brush) => OxyColor.Parse(((SolidColorBrush)brush).Color.ToString());
     }
 }

@@ -1,123 +1,199 @@
-﻿using p528_gui.Interfaces;
-using p528_gui.Windows;
+﻿using ITS.Propagation;
+using P528GUI.ValidationRules;
+using P528GUI.Windows;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-namespace p528_gui.UserControls
+namespace P528GUI.UserControls
 {
-    public partial class MultipleHighHeightsInputsControl : UserControl, IUnitEnabled, IInputValidation
+    public partial class MultipleHighHeightsInputsControl : UserControl, INotifyPropertyChanged
     {
-        private Units _units;
-        public Units Units
+        #region Private Fields
+
+        private int _errorCnt = 0;
+
+        private bool _invalidTerminalRelationship = false;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Low terminal height, in user defined units
+        /// </summary>
+        public double h_1 { get; set; }
+
+        /// <summary>
+        /// High terminal heights, in user defined units
+        /// </summary>
+        public ObservableCollection<double> h_2s { get; set; } = new ObservableCollection<double>() { 1000 };
+
+        /// <summary>
+        /// Frequency, in MHz
+        /// </summary>
+        public double f__mhz { get; set; }
+
+        /// <summary>
+        /// Time percentage
+        /// </summary>
+        public double time { get; set; }
+
+        /// <summary>
+        /// Polarization
+        /// </summary>
+        public P528.Polarization Polarization { get; set; }
+
+        /// <summary>
+        /// Number of validation errors
+        /// </summary>
+        public int ErrorCnt
         {
-            get { return _units; }
+            get { return _errorCnt; }
             set
             {
-                _units = value;
-                tb_t1.Text = "Terminal 1 Height " + ((_units == Units.Meters) ? "(m):" : "(ft):");
-                tb_t2.Text = "Terminal 2 Heights " + ((_units == Units.Meters) ? "(m):" : "(ft):");
+                _errorCnt = value;
+                OnPropertyChanged();
             }
         }
 
-        public double H1 { get; set; }
+        #endregion
 
-        public List<double> H2s { get; set; } = new List<double>();
-
-        public double FMHZ { get; set; }
-
-        public double TIME { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public MultipleHighHeightsInputsControl()
         {
             InitializeComponent();
+
+            GlobalState.UnitsChanged += GlobalState_UnitsChanged;
+
+            DataContext = this;
         }
 
-        public bool AreInputsValid()
+        private void GlobalState_UnitsChanged(object sender, EventArgs e)
         {
-            if (!Tools.ValidateH1(tb_h1.Text, _units, out double h_1))
-                return Tools.ValidationError(tb_h1);
-            else
+            tb_t1.Text = "Terminal 1 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+            tb_t2.Text = "Terminal 2 Height " + ((GlobalState.Units == Units.Meters) ? "(m):" : "(ft):");
+
+            // Need to manually force validation since it only triggers during text updates
+            tb_h1.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+
+            // Manually validation terminal heights in ListBox, removing invalid ones
+            var terminalValidationRule = new TerminalHeightValidation();
+            var removeIndexes = new List<int>();
+            for (int i = 0; i < h_2s.Count; i++)
             {
-                Tools.ValidationSuccess(tb_h1);
-                H1 = h_1;
-            }
+                var result = terminalValidationRule.Validate(h_2s[i], null);
 
-            H2s.Clear();
-            foreach (ListBoxItem item in lb_h2s.Items)
+                if (!result.IsValid)
+                    removeIndexes.Add(i);
+            }
+            if (removeIndexes.Count > 0)
             {
-                string h2 = item.Content.ToString();
+                MessageBox.Show("Some high terminal heights are invalid for the current units.  These will be removed.");
 
-                if (!Tools.ValidateH2(h2, _units, out double h_2))
-                    return false;
-                else
-                {
-                    if (h_1 > h_2)
-                    {
-                        Tools.ValidationError(tb_h1);
-                        MessageBox.Show(Messages.Terminal1LessThan2Error);
-                    }
-                    else
-                    {
-                        Tools.ValidationSuccess(tb_h1);
-
-                        H2s.Add(h_2);
-                    }
-                }
+                for (int i = removeIndexes.Count - 1; i >= 0; i--)
+                    h_2s.RemoveAt(removeIndexes[i]);
             }
-
-            if (!Tools.ValidateFMHZ(tb_freq.Text, out double f__mhz))
-                return Tools.ValidationError(tb_freq);
-            else
-            {
-                Tools.ValidationSuccess(tb_freq);
-                FMHZ = f__mhz;
-            }
-
-            if (!Tools.ValidateTIME(tb_time.Text, out double time))
-                return Tools.ValidationError(tb_time);
-            else
-            {
-                Tools.ValidationSuccess(tb_time);
-                TIME = time / 100;
-            }
-
-            return true;
+            Btn_Remove_Click(null, null);   // kicking a validation check of count
         }
 
+        private void TextBox_Error(object sender, ValidationErrorEventArgs e)
+        {
+            if (e.Action == ValidationErrorEventAction.Added)
+                ErrorCnt++;
+            else
+                ErrorCnt--;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+
+        #region Event Handlers
+
+        /// <summary>
+        /// Prompt user for new high terminal to add
+        /// </summary>
         private void Btn_AddHeight_Click(object sender, RoutedEventArgs e)
         {
-            var wndw = new AddHighHeightWindow() { Units = _units };
+            var wndw = new AddHighHeightWindow() { h_1 = h_1 };
 
             if (!wndw.ShowDialog().Value)
                 return;
 
-            lb_h2s.Items.Add(new ListViewItem() { Content = wndw.H2 });
+            if (h_2s.Count == 0)
+            {
+                ErrorCnt--;
+                Validation.ClearInvalid(lb_h2s.GetBindingExpression(ListBox.ItemsSourceProperty));
+            }
+
+            h_2s.Add(wndw.h_2);
         }
 
-        private void Lb_h2s_SelectionChanged(object sender, SelectionChangedEventArgs e) => btn_Remove.IsEnabled = (lb_h2s.SelectedItems.Count > 0);
-
+        /// <summary>
+        /// Remove selected high height(s) from UI control
+        /// </summary>
         private void Btn_Remove_Click(object sender, RoutedEventArgs e)
         {
-            var itemsToRemove = new List<ListViewItem>();
+            var itemsToRemove = new List<double>();
 
-            foreach (ListViewItem item in lb_h2s.SelectedItems)
+            foreach (double item in lb_h2s.SelectedItems)
                 itemsToRemove.Add(item);
 
             foreach (var item in itemsToRemove)
+                h_2s.Remove(item);
+
+            if (h_2s.Count == 0)
             {
-                lb_h2s.Items.Remove(item);
+                ErrorCnt++;
+
+                var binding = lb_h2s.GetBindingExpression(ListBox.ItemsSourceProperty);
+                var error = new ValidationError(new DoubleValidation(), binding) { ErrorContent = "At least 1 high terminal height is required" };
+                Validation.MarkInvalid(binding, error);
+            }
+        }
+
+        /// <summary>
+        /// Control if the 'Remove' button is enabled
+        /// </summary>
+        private void Lb_h2s_SelectionChanged(object sender, SelectionChangedEventArgs e) 
+            => btn_Remove.IsEnabled = lb_h2s.SelectedItems.Count > 0;
+
+        #endregion
+
+        private void tb_h1_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // check if terminal height is less than any in listbox
+            if (!Double.TryParse(tb_h1.Text, out double h1))
+                return;
+
+            int cnt = 0;
+            foreach (double h2 in h_2s)
+            {
+                if (h2 < h1)
+                {
+                    if (!_invalidTerminalRelationship)
+                    {
+                        ErrorCnt++;
+                        _invalidTerminalRelationship = true;
+                    }
+
+                    var binding = tb_h1.GetBindingExpression(TextBox.TextProperty);
+                    var error = new ValidationError(new TerminalRelationshipValidation(), binding) { ErrorContent = "Terminal 1 must be less than or equal to Terminal 2" };
+                    Validation.MarkInvalid(binding, error);
+                }
+                else
+                    cnt++;
+            }
+            if (cnt == h_2s.Count && _invalidTerminalRelationship)
+            {
+                ErrorCnt--;
+                _invalidTerminalRelationship = false;
             }
         }
     }
