@@ -494,10 +494,14 @@ namespace P528GUI
             }
 
             // fill in the gaps between line segments to make continuous
-            _losSeries.Points.Add(_dfracSeries.Points.First());
-            _dfracSeries.Points.Add(_scatSeries.Points.First());
+            // checking if line series have points based on bounds of generated data
+            if (_dfracSeries.Points.Any())
+                _losSeries.Points.Add(_dfracSeries.Points.First());
+            if (_scatSeries.Points.Any())
+                _dfracSeries.Points.Add(_scatSeries.Points.First());
 
-            // add all line series to plot
+            // add all line series to plot, even if they don't have any data
+            // for the current scenerio
             PlotModel.Series.Add(_losSeries);
             PlotModel.Series.Add(_dfracSeries);
             PlotModel.Series.Add(_scatSeries);
