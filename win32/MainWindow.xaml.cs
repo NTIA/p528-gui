@@ -674,8 +674,8 @@ namespace P528GUI
             {
                 new ModelArgs()
                 {
-                    h_1__user_units = Tools.ConvertToMeters(inputControl.h_1),
-                    h_2__user_units = Tools.ConvertToMeters(inputControl.h_2),
+                    h_1__user_units = inputControl.h_1,
+                    h_2__user_units = inputControl.h_2,
                     f__mhz = inputControl.f__mhz,
                     time = inputControl.time,
                     Polarization = inputControl.Polarization
@@ -1063,6 +1063,7 @@ namespace P528GUI
             // Update text
             _xAxis.Title = "Distance " + ((GlobalState.Units == Units.Meters) ? "(km)" : "(n mile)");
             ResetPlotAxis();
+            ResetPlotData();
         }
 
         private void ResetPlotAxis()
