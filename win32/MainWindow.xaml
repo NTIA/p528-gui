@@ -97,6 +97,8 @@
         <DockPanel Grid.Row="2" Margin="3" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
                 <TextBlock Name="tb_ConsistencyWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+                <TextBlock Name="tb_Terminal1HeightWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
+                <TextBlock Name="tb_Terminal2HeightWarning" HorizontalAlignment="Center" Margin="3" Background="Yellow" Padding="25,3" Visibility="Collapsed" TextWrapping="Wrap"/>
             </StackPanel>
 
             <Button DockPanel.Dock="Right" Content="Render" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="3" Width="75" Name="btn_Render" Click="Btn_Render_Click" TabIndex="8"/>

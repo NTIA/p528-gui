@@ -245,6 +245,8 @@ namespace P528GUI
             DataContext = this;
 
             tb_ConsistencyWarning.Text = Messages.ModelConsistencyWarning;
+            tb_Terminal1HeightWarning.Text = Messages.Terminal1HeightWarining;
+            tb_Terminal2HeightWarning.Text = Messages.Terminal2HeightWarining;
 
             SetUnits();
 
@@ -415,7 +417,9 @@ namespace P528GUI
                         out P528.Result result);
 
                     // Ignore 'ERROR_HEIGHT_AND_DISTANCE' for visualization.  Just relates to the d__km = 0 point and will return 0 dB result
-                    if (rtn != Constants.ERROR_HEIGHT_AND_DISTANCE && rtn != 0)
+                    if (rtn != Constants.ERROR_HEIGHT_AND_DISTANCE && 
+                        rtn != Constants.SUCCESS &&
+                        rtn != Constants.SUCCESS_WITH_WARNINGS)
                         curveData.Rtn = rtn;
 
                     // record the result
@@ -423,6 +427,9 @@ namespace P528GUI
                     curveData.L_btl__db.Add(result.A__db);
                     curveData.L_fs__db.Add(result.A_fs__db);
                     curveData.PropModes.Add(result.ModeOfPropagation);
+
+                    // add warning code
+                    curveData.Warn |= result.warnings;
 
                     // iterate
                     d__user_units += d_step__user_units;
@@ -469,7 +476,9 @@ namespace P528GUI
             var curveData = ((List<CurveData>)e.Result).First();
 
             // Set any warning messages
-            tb_ConsistencyWarning.Visibility = ((curveData.Rtn & Constants.WARNING__DFRAC_TROPO_REGION) == Constants.WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
+            tb_ConsistencyWarning.Visibility = ((curveData.Warn & Constants.WARNING__DFRAC_TROPO_REGION) == Constants.WARNING__DFRAC_TROPO_REGION) ? Visibility.Visible : Visibility.Collapsed;
+            tb_Terminal1HeightWarning.Visibility = ((curveData.Warn & Constants.WARNING__HEIGHT_LIMIT_H_1) == Constants.WARNING__HEIGHT_LIMIT_H_1) ? Visibility.Visible : Visibility.Collapsed;
+            tb_Terminal2HeightWarning.Visibility = ((curveData.Warn & Constants.WARNING__HEIGHT_LIMIT_H_2) == Constants.WARNING__HEIGHT_LIMIT_H_2) ? Visibility.Visible : Visibility.Collapsed;
 
             ResetPlotData();
 

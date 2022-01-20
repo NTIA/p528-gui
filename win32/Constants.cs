@@ -8,7 +8,14 @@
 
         public const int ERROR_HEIGHT_AND_DISTANCE = 10;
 
-        public const int WARNING__DFRAC_TROPO_REGION = 0xFF1;
+        // return codes
+        public const int SUCCESS = 0;
+        public const int SUCCESS_WITH_WARNINGS = 11;
+
+        // warning flags
+        public const int WARNING__DFRAC_TROPO_REGION = 0x01;
+        public const int WARNING__HEIGHT_LIMIT_H_1 = 0x02;
+        public const int WARNING__HEIGHT_LIMIT_H_2 = 0x04;
 
         public const string RENDER_MSG = "Generating Plot Data...";
 
