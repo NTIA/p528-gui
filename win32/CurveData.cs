@@ -19,6 +19,11 @@ namespace P528GUI
         public int Rtn { get; set; } = 0;
 
         /// <summary>
+        /// Model warning flags
+        /// </summary>
+        public int Warn { get; set; } = 0;
+
+        /// <summary>
         /// Distances, in user defined units
         /// </summary>
         public List<double> d__user_units { get; set; } = new List<double>();
