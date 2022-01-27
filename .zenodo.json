@@ -7,16 +7,16 @@
         }
     ],
 
-    "title": "Recommendation ITU-R P.528 GUI, Release 2.0",
+    "title": "Recommendation ITU-R P.528 GUI, Release 2.2",
 
     "upload_type": "software",
 
-    "version": "2.0.0",
+    "version": "2.2.0",
 
     "related_identifiers": [
         {
             "scheme": "doi",
-            "identifier": "10.5281/zenodo.5081072",
+            "identifier": "10.5281/zenodo.5911006",
             "relation": "references",
             "resource_type": "software"
         }
