@@ -34,7 +34,7 @@
         <TextBlock Grid.Row="0" Grid.Column="1" Text="The Institute for Telecommunication Sciences"/>
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Website:"/>
         <TextBlock Grid.Row="1" Grid.Column="1">
-            <Hyperlink NavigateUri="https://www.its.bldrdoc.gov/" RequestNavigate="Hyperlink_RequestNavigate">https://www.its.bldrdoc.gov/</Hyperlink>
+            <Hyperlink NavigateUri="https://its.ntia.gov/" RequestNavigate="Hyperlink_RequestNavigate">https://its.ntia.gov/</Hyperlink>
         </TextBlock>
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Application Version:"/>
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
